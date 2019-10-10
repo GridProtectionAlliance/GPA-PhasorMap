@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import * as L from './libs/leaflet';
 import WorldmapCtrl from './worldmap_ctrl';
 
-const tileServers = {
+export const tileServers = {
   'CartoDB Positron': {
     url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
     attribution:
@@ -16,8 +16,21 @@ const tileServers = {
       '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
       '&copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
     subdomains: 'abcd',
-  },
-};
+    },
+    'OpenStreetMap Mapnik': {
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        subdomains: 'abcd',
+    },
+    'Open Topo Map': {
+        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+            '&copy; <a href="http://viewfinderpanoramas.org"> SRTM < /a>' +
+            '&copy; < a href="https:/ / opentopomap.org" > OpenTopoMap < /a>' +
+            '&copy; (<a href="https:/ / creativecommons.org / licenses / by - sa / 3.0 / "> CC - BY - SA < /a>)',
+        subdomains: 'abcd',
+    }
+}
 
 export default class WorldMap {
   ctrl: WorldmapCtrl;
@@ -26,11 +39,12 @@ export default class WorldMap {
   map: any;
   legend: any;
   circlesLayer: any;
+  Staticlayer: any;
 
   constructor(ctrl, mapContainer) {
     this.ctrl = ctrl;
     this.mapContainer = mapContainer;
-    this.circles = [];
+      this.circles = [];
   }
 
   createMap() {
@@ -42,8 +56,10 @@ export default class WorldMap {
       worldCopyJump: true,
       preferCanvas: true,
       center: mapCenter,
-      zoom: parseInt(this.ctrl.panel.initialZoom, 10) || 1,
-    });
+      zoom: parseFloat(this.ctrl.panel.initialZoom) || 1,
+      });
+      console.log(parseFloat(this.ctrl.panel.initialZoom));
+
     this.setMouseWheelZoom();
 
     const selectedTileServer = tileServers[this.ctrl.tileServer];
@@ -53,8 +69,25 @@ export default class WorldMap {
       reuseTiles: true,
       detectRetina: true,
       attribution: selectedTileServer.attribution,
-    }).addTo(this.map);
+      }).addTo(this.map);
+      this.Staticlayer = L.geoJSON().addTo(this.map);
+
   }
+
+    updateStaticLayer(feature) {
+        this.Staticlayer.addData(feature);
+    }
+
+    updateBaseLayer() {
+        const selectedTileServer = tileServers[this.ctrl.tileServer];
+        (<any>window).L.tileLayer(selectedTileServer.url, {
+            maxZoom: 18,
+            subdomains: selectedTileServer.subdomains,
+            reuseTiles: true,
+            detectRetina: true,
+            attribution: selectedTileServer.attribution,
+        }).addTo(this.map);
+    }
 
   createLegend() {
     this.legend = (<any>window).L.control({ position: 'bottomleft' });
@@ -83,8 +116,8 @@ export default class WorldMap {
           (thresholds[index + 1] ? '&ndash;' + thresholds[index + 1] + '</div>' : '+');
       }
       this.legend._div.innerHTML = legendHtml;
-    };
-    this.legend.addTo(this.map);
+      };
+      this.legend.addTo(this.map);
   }
 
   needToRedrawCircles(data) {
@@ -154,7 +187,8 @@ export default class WorldMap {
           fillColor: this.getColor(dataPoint.value),
           fillOpacity: 0.5,
           location: dataPoint.key,
-        });
+          });
+        circle.closePopup();
         circle.unbindPopup();
         this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded);
       }
@@ -191,12 +225,27 @@ export default class WorldMap {
   createPopup(circle, locationName, value) {
     const unit = value && value === 1 ? this.ctrl.panel.unitSingular : this.ctrl.panel.unitPlural;
     const label = (locationName + ': ' + value + ' ' + (unit || '')).trim();
-    circle.bindPopup(label, {
-      offset: (<any>window).L.point(0, -2),
-      className: 'worldmap-popup',
-      closeButton: this.ctrl.panel.stickyLabels,
-    });
 
+
+      if (this.ctrl.panel.stickyLabels && this.ctrl.panel.constantLabels) {
+          circle.bindPopup(label, {
+              offset: (<any>window).L.point(0, -2),
+              className: 'worldmap-popup',
+              closeButton: false,
+              autoClose: false,
+              closeOnClick: false,
+              closeOnEscapeKey: false,
+          }).openPopup();
+      }
+      else {
+          circle.bindPopup(label, {
+              offset: (<any>window).L.point(0, -2),
+              className: 'worldmap-popup',
+              closeButton: this.ctrl.panel.stickyLabels,
+          });
+      }
+
+    
     circle.on('mouseover', function onMouseOver(evt) {
       const layer = evt.target;
       layer.bringToFront();
@@ -250,7 +299,7 @@ export default class WorldMap {
   }
 
   setZoom(zoomFactor) {
-    this.map.setZoom(parseInt(zoomFactor, 10));
+    this.map.setZoom(parseFloat(zoomFactor));
   }
 
   remove() {

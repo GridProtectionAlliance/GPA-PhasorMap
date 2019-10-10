@@ -33,14 +33,18 @@ const panelDefaults = {
   decimals: 0,
   hideEmpty: false,
   hideZero: false,
-  stickyLabels: false,
+    stickyLabels: false,
+    constantLabels: false,
   tableQueryOptions: {
     queryType: "geohash",
     geohashField: "geohash",
     latitudeField: "latitude",
     longitudeField: "longitude",
     metricField: "metric"
-  }
+    },
+    addStatic: false,
+    StaticLayer: "",
+    mapBackground: "CartoDB Dark"
 };
 
 const mapCenters = {
@@ -56,7 +60,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
   static templateUrl = "partials/module.html";
 
   dataFormatter: DataFormatter;
-  locations: any;
+    locations: any;
+   staticLayerContent: any;
   tileServer: string;
   saturationClass: string;
   map: any;
@@ -79,13 +84,27 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     this.events.on("data-snapshot-load", this.onDataSnapshotLoad.bind(this));
 
     this.loadLocationDataFromFile();
+    this.GetStaticLayer();
+
   }
 
-  setMapProvider(contextSrv) {
-    this.tileServer = contextSrv.user.lightTheme
-      ? "CartoDB Positron"
-      : "CartoDB Dark";
-    this.setMapSaturationClass();
+    setNewMapBackground() {
+        this.tileServer = this.panel.mapBackground;
+        this.setMapSaturationClass();
+        this.map.updateBaseLayer();
+        this.render();
+    }
+
+    setMapProvider(contextSrv) {
+        if (this.panel.mapBackground) {
+            this.tileServer = this.panel.mapBackground;
+        }
+        else {
+            this.tileServer = "CartoDB Dark";
+        }
+        this.setMapSaturationClass();
+        
+        this.render();
   }
 
   setMapSaturationClass() {
@@ -133,6 +152,10 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       });
     } else if (this.panel.locationData === "table") {
       // .. Do nothing
+    } else if (this.panel.locationData === "OpenHistorian") {
+        // Added Open Historian Connection
+        this.render();
+
     } else if (
       this.panel.locationData !== "geohash" &&
       this.panel.locationData !== "json result"
@@ -198,6 +221,9 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       } else if (this.panel.locationData === "json result") {
         this.series = dataList;
         this.dataFormatter.setJsonValues(data);
+      } else if (this.panel.locationData === "OpenHistorian") {
+          this.series = dataList;
+          this.dataFormatter.setOpenHistorian(data);
       } else {
         this.series = dataList.map(this.seriesHandler.bind(this));
         this.dataFormatter.setValues(data);
@@ -265,10 +291,20 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     this.render();
   }
 
-  toggleStickyLabels() {
+    toggleStickyLabels() {
     this.map.clearCircles();
     this.render();
   }
+
+    toggleConstantLabels() {
+    this.map.clearCircles();
+    this.render();
+    }
+
+
+    toogleStatic() {
+        this.GetStaticLayer()
+    }
 
   changeThresholds() {
     this.updateThresholdData();
@@ -298,6 +334,19 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       this.render();
     }
   }
+
+    GetStaticLayer() {
+        if (this.panel.addStatic) {
+            $.getJSON(this.panel.StaticLayer).then(res => {
+                this.staticLayerContent = res;
+                this.render();
+            });
+        }
+        else {
+            this.staticLayerContent = {};
+        }
+        
+    }
 
   link(scope, elem, attrs, ctrl) {
     let firstRender = true;
@@ -331,6 +380,11 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         ctrl.map = map;
       }
 
+         if (ctrl.panel.addStatic) {
+             if (ctrl.staticLayerContent) {
+                 ctrl.map.updateStaticLayer(ctrl.staticLayerContent);
+             }
+         }
       ctrl.map.resize();
 
       if (ctrl.mapCenterMoved) {
