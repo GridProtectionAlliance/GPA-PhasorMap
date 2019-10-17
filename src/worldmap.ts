@@ -163,8 +163,13 @@ export default class WorldMap {
     data.forEach(dataPoint => {
       if (!dataPoint.locationName) {
         return;
-      }
-      circles.push(this.createCircle(dataPoint));
+        }
+        if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
+        }
+        else {
+            circles.push(this.createCircle(dataPoint));
+        }
+      
     });
     this.circlesLayer = this.addCircles(circles);
     this.circles = circles;
@@ -190,7 +195,7 @@ export default class WorldMap {
           });
         circle.closePopup();
         circle.unbindPopup();
-        this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded);
+          this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded, dataPoint);
       }
     });
   }
@@ -204,7 +209,7 @@ export default class WorldMap {
       location: dataPoint.key,
     });
 
-    this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded);
+      this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded, dataPoint);
     return circle;
   }
 
@@ -222,11 +227,24 @@ export default class WorldMap {
     return circleSizeRange * dataFactor + circleMinSize;
   }
 
-  createPopup(circle, locationName, value) {
-    const unit = value && value === 1 ? this.ctrl.panel.unitSingular : this.ctrl.panel.unitPlural;
-    const label = (locationName + ': ' + value + ' ' + (unit || '')).trim();
+  createPopup(circle, locationName, value, point) {
+      const unit = value && value === 1 ? this.ctrl.panel.unitSingular : this.ctrl.panel.unitPlural;
+      let label;
 
+      if (this.ctrl.panel.locationData === "OpenHistorian") {
+          //label = ("<a href='../ParentStatus.cshtml?DeviceID=" + deviceId + "'>" + locationName + "</a>").trim();
+          label = this.ctrl.panel.popupstring;
+          label = label.replace("{value}", value);
+          label = label.replace("{deviceID}", point.deviceId);
+          label = label.replace("{PointTag}", point.PointTag);
+          label = label.replace("{deviceName}", point.deviceName);
 
+      }
+      else {
+          label = (locationName + ': ' + value + ' ' + (unit || '')).trim();
+      }
+      //<a href='{string.Format(StatusLink, reader.GetValue(4))}' target='_blank'>{reader.GetValue(3)}<a>
+      // 4-> DeviceID
       if (this.ctrl.panel.stickyLabels && this.ctrl.panel.constantLabels) {
           circle.bindPopup(label, {
               offset: (<any>window).L.point(0, -2),

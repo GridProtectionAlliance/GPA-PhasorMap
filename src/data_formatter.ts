@@ -1,6 +1,7 @@
 import * as _ from 'lodash';
 import decodeGeoHash from './geohash';
 import kbn from 'grafana/app/core/utils/kbn';
+import $ from "jquery";
 
 export default class DataFormatter {
   constructor(private ctrl) {}
@@ -238,5 +239,73 @@ export default class DataFormatter {
       data.lowestValue = lowestValue;
       data.valueRange = highestValue - lowestValue;
     }
-  }
+    }
+
+    setOpenHistorian(data) {
+
+        if (this.ctrl.series && this.ctrl.series.length > 0) {
+            let highestValue = 0;
+            let lowestValue = Number.MAX_VALUE;
+
+            let locationrequest = new Array();
+            this.ctrl.series.forEach(point => {
+                const datarequest = {
+                    refId: point.refId,
+                    target: point.target
+                };
+                locationrequest.push(datarequest);
+            });
+
+            $.ajax({
+                type: "POST",
+                url: "../api/grafana/GetLocationData",
+                data: JSON.stringify(locationrequest),
+                contentType: "application/json",
+                dataType: "json",
+                success: res => {
+                    this.ctrl.locations = JSON.parse(res);
+                }
+            });
+
+            this.ctrl.series.forEach(point => {
+                let location;
+                if (this.ctrl.locations) {
+                    location = _.find(this.ctrl.locations,loc => {
+                        return loc.PointTag.toUpperCase() === point.target.toUpperCase();
+                    }); 
+
+                
+                }
+                else {
+                    location = { longitude: null, latitude: null };
+                }
+
+                const dataValue = {
+                    key: point.target,
+                    locationName: point.target,
+                    locationLatitude: location.Latitude,
+                    locationLongitude: location.Longitude,
+                    value: point.value !== undefined ? point.value : 1,
+                    valueRounded: 0,
+                    deviceId: location.DeviceID,
+                    PointTag: location.PointTag,
+                    deviceName: location.Device,
+                };
+                console.log(dataValue);
+
+                if (dataValue.value > highestValue) {
+                    highestValue = dataValue.value;
+                }
+                if (dataValue.value < lowestValue) {
+                    lowestValue = dataValue.value;
+                }
+                dataValue.valueRounded = Math.round(dataValue.value);
+                data.push(dataValue);
+            });
+            data.highestValue = highestValue;
+            data.lowestValue = lowestValue;
+            data.valueRange = highestValue - lowestValue;
+            
+        }
+    }
 }

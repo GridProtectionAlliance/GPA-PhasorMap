@@ -44,7 +44,8 @@ const panelDefaults = {
     },
     addStatic: false,
     StaticLayer: "",
-    mapBackground: "CartoDB Dark"
+    mapBackground: "CartoDB Dark",
+    popupstring: '{PointTag}',
 };
 
 const mapCenters = {
@@ -151,7 +152,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         this.render();
       });
     } else if (this.panel.locationData === "table") {
-      // .. Do nothing
+      // .. Domap nothing
     } else if (this.panel.locationData === "OpenHistorian") {
         // Added Open Historian Connection
         this.render();
