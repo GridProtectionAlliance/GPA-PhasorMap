@@ -277,7 +277,11 @@ export default class DataFormatter {
                 
                 }
                 else {
-                    location = { longitude: null, latitude: null };
+                    location = { longitude: null, latitude: null, DeviceID: null, Device: null, PointTag: null };
+                }
+
+                if (!location) {
+                    location = { longitude: null, latitude: null, DeviceID: null, Device: null, PointTag: null };
                 }
 
                 const dataValue = {
