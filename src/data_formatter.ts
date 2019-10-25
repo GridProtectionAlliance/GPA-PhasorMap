@@ -295,7 +295,6 @@ export default class DataFormatter {
                     PointTag: location.PointTag,
                     deviceName: location.Device,
                 };
-                console.log(dataValue);
 
                 if (dataValue.value > highestValue) {
                     highestValue = dataValue.value;

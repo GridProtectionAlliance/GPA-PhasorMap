@@ -378,14 +378,16 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       if (!ctrl.map) {
         const map = new WorldMap(ctrl, mapContainer[0]);
         map.createMap();
-        ctrl.map = map;
+          ctrl.map = map;
+
+        if (ctrl.panel.addStatic) {
+            if (ctrl.staticLayerContent) {
+                ctrl.map.updateStaticLayer(ctrl.staticLayerContent);
+            }
+        }
       }
 
-         if (ctrl.panel.addStatic) {
-             if (ctrl.staticLayerContent) {
-                 ctrl.map.updateStaticLayer(ctrl.staticLayerContent);
-             }
-         }
+         
       ctrl.map.resize();
 
       if (ctrl.mapCenterMoved) {
