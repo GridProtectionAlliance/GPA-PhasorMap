@@ -46,6 +46,7 @@ const panelDefaults = {
     StaticLayer: "",
     mapBackground: "CartoDB Dark",
     popupstring: '{PointTag}',
+    customlayers: [],
 };
 
 const mapCenters = {
@@ -61,8 +62,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
   static templateUrl = "partials/module.html";
 
   dataFormatter: DataFormatter;
-    locations: any;
-   staticLayerContent: any;
+  locations: any;
+  staticLayerContent: any;
   tileServer: string;
   saturationClass: string;
   map: any;
@@ -207,6 +208,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       return;
     }
 
+    this.UpdateCustomDynamicLayer();
+
     try {
       if (this.dashboard.snapshot && this.locations) {
         this.panel.snapshotLocationData = this.locations;
@@ -335,12 +338,56 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       this.render();
     }
   }
+    AddCustomLayer() {
+        this.panel.customlayers.push({ name: "Custom Layer", link: "", dynamic: true, usercontrolled: false, data: {}});
+        this.UpdateCustomLayer();
+    }
+
+    RemoveCustomLayer(id) {
+        this.panel.customlayers.splice(id, 1);
+        this.UpdateCustomLayer();
+    }
+
+    UpdateCustomLayer() {
+        let promisedata: Promise<void>[] = [];
+
+        this.panel.customlayers.forEach(layer => {
+            if (layer.link) {
+                promisedata.push(
+                    $.getJSON(layer.link).then(res => {
+                        layer.data = res;
+                    })
+                );
+            }
+        });
+
+        var customLayerRender = this;
+
+        Promise.all(promisedata).then(function () {
+            //this.ctrl.render();
+            console.log(customLayerRender.panel.customlayers);
+        });
+    }
+
+    UpdateCustomDynamicLayer() {
+        let promisedata: Promise<void>[] = [];
+
+        this.panel.customlayers.forEach(layer => {
+            if (layer.link && layer.dynamic) {
+                promisedata.push(
+                    $.getJSON(layer.link).then(res => {
+                        layer.data = res;
+                    })
+                );
+            }
+        });
+    }
 
     GetStaticLayer() {
         if (this.panel.addStatic) {
             $.getJSON(this.panel.StaticLayer).then(res => {
                 this.staticLayerContent = res;
-                this.render();
+                
             });
         }
         else {
@@ -378,7 +425,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       if (!ctrl.map) {
         const map = new WorldMap(ctrl, mapContainer[0]);
         map.createMap();
-          ctrl.map = map;
+        ctrl.map = map;
 
         if (ctrl.panel.addStatic) {
             if (ctrl.staticLayerContent) {

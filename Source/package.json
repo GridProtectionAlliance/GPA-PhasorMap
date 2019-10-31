@@ -1,7 +1,7 @@
 {
-  "name": "worldmap-panel",
+  "name": "phasorMap-panel",
   "version": "1.0.0",
-  "description": "Worldmap Panel Plugin for Grafana",
+  "description": "Phasor Map Panel Plugin for Grafana",
   "main": "src/module.js",
   "scripts": {
     "build": "node --max-old-space-size=8192 ./node_modules/.bin/webpack --config webpack.config.prod.js",
@@ -15,7 +15,7 @@
     "plugin",
     "panel"
   ],
-  "author": "Grafana Labs",
+  "author": "Grid Protection Alliance",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.1.6",

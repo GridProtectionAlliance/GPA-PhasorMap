@@ -73,9 +73,17 @@ export default class WorldMap {
         this.Staticlayer = L.geoJSON().addTo(this.map);
     }
 
-    updateStaticLayer(feature) {
+    updateStaticLayer() {
         this.clearStaticLayer();
-        this.Staticlayer.addData(feature);
+        let features:any[] = [];
+
+        this.ctrl.panel.customlayers.forEach(layer => {
+            if (layer.data && !layer.usercontrolled) {
+                features.push(layer.data);
+               
+                    }
+        });
+        this.Staticlayer.addData(features);
     }
 
     clearStaticLayer() {
