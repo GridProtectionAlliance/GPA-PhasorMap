@@ -40,11 +40,14 @@ export default class WorldMap {
     legend: any;
     circlesLayer: any;
     Staticlayer: any;
+    Controlledlayer: any;
+    switchableLayer: any;
 
     constructor(ctrl, mapContainer) {
         this.ctrl = ctrl;
         this.mapContainer = mapContainer;
         this.circles = [];
+        this.switchableLayer = {};
     }
 
     createMap() {
@@ -71,25 +74,47 @@ export default class WorldMap {
         }).addTo(this.map);
 
         this.Staticlayer = L.geoJSON().addTo(this.map);
+        this.Controlledlayer = L.control.layers(null).addTo(this.map);
     }
 
     updateStaticLayer() {
         this.clearStaticLayer();
-        let features:any[] = [];
+        let features: any[] = [];
 
-        this.ctrl.panel.customlayers.forEach(layer => {
-            if (layer.data && !layer.usercontrolled) {
-                features.push(layer.data);
-               
+        if (this.ctrl.customlayerData) {
+            this.ctrl.panel.customlayers.forEach(layer => {
+                if (this.ctrl.customlayerData[layer.name]) {
+                    if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled) {
+                        features.push(this.ctrl.customlayerData[layer.name].data);
+
                     }
-        });
-        this.Staticlayer.addData(features);
+                    else if (this.ctrl.customlayerData[layer.name].data) {
+                        if (this.switchableLayer[layer.name]) {
+                            this.switchableLayer[layer.name].clearLayers();
+                            this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
+                        }
+                        else {
+                            this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data).addTo(this.map);
+                        }
+
+                    }
+                }
+            });
+
+            this.Controlledlayer = L.control.layers(null, this.switchableLayer).addTo(this.map);
+            this.Staticlayer.addData(features);
+        }
     }
 
     clearStaticLayer() {
+        this.Staticlayer.clearLayers();
         this.Staticlayer.remove();
         this.Staticlayer = L.geoJSON().addTo(this.map);
+
+        this.Controlledlayer.remove();
+
     }
+
 
     updateBaseLayer() {
         const selectedTileServer = tileServers[this.ctrl.tileServer];
@@ -258,8 +283,8 @@ export default class WorldMap {
         else {
             label = (locationName + ': ' + value + ' ' + (unit || '')).trim();
         }
-        //<a href='{string.Format(StatusLink, reader.GetValue(4))}' target='_blank'>{reader.GetValue(3)}<a>
-        // 4-> DeviceID
+
+
         if (this.ctrl.panel.stickyLabels && this.ctrl.panel.constantLabels) {
             circle.bindPopup(label, {
                 offset: (<any>window).L.point(0, -2),

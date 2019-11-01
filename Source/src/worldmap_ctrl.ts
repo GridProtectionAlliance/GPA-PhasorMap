@@ -42,8 +42,6 @@ const panelDefaults = {
     longitudeField: "longitude",
     metricField: "metric"
     },
-    addStatic: false,
-    StaticLayer: "",
     mapBackground: "CartoDB Dark",
     popupstring: '{PointTag}',
     customlayers: [],
@@ -52,7 +50,7 @@ const panelDefaults = {
 const mapCenters = {
   "(0°, 0°)": { mapCenterLatitude: 0, mapCenterLongitude: 0 },
   "North America": { mapCenterLatitude: 40, mapCenterLongitude: -100 },
-  Europe: { mapCenterLatitude: 46, mapCenterLongitude: 14 },
+  "Europe": { mapCenterLatitude: 46, mapCenterLongitude: 14 },
   "West Asia": { mapCenterLatitude: 26, mapCenterLongitude: 53 },
   "SE Asia": { mapCenterLatitude: 10, mapCenterLongitude: 106 },
   "Last GeoHash": { mapCenterLatitude: 0, mapCenterLongitude: 0 }
@@ -70,6 +68,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
   series: any;
   data: any;
   mapCenterMoved: boolean;
+    customlayerData: any;
 
   /** @ngInject **/
   constructor($scope, $injector, contextSrv) {
@@ -85,9 +84,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     this.events.on("panel-teardown", this.onPanelTeardown.bind(this));
     this.events.on("data-snapshot-load", this.onDataSnapshotLoad.bind(this));
 
-    this.loadLocationDataFromFile();
-    this.GetStaticLayer();
-
+      this.loadLocationDataFromFile();
+      this.customlayerData = {};
   }
 
     setNewMapBackground() {
@@ -305,11 +303,6 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     this.render();
     }
 
-
-    toogleStatic() {
-        this.GetStaticLayer()
-    }
-
   changeThresholds() {
     this.updateThresholdData();
     this.map.legend.update();
@@ -337,63 +330,80 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     if (this.panel.locationData === "geohash") {
       this.render();
     }
-  }
+    }
+
     AddCustomLayer() {
-        this.panel.customlayers.push({ name: "Custom Layer", link: "", dynamic: true, usercontrolled: false, data: {}});
+        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false});
         this.UpdateCustomLayer();
     }
 
     RemoveCustomLayer(id) {
+        let name = this.panel.customlayers[id].name;
         this.panel.customlayers.splice(id, 1);
+        delete this.customlayerData[name];
         this.UpdateCustomLayer();
+       
     }
 
     UpdateCustomLayer() {
         let promisedata: Promise<void>[] = [];
 
+        this.customlayerData = {};
+
+        var promiseCtrl = this;
         this.panel.customlayers.forEach(layer => {
             if (layer.link) {
                 promisedata.push(
                     $.getJSON(layer.link).then(res => {
-                        layer.data = res;
+                        console.log(promiseCtrl.customlayerData)
+                        if (promiseCtrl.customlayerData[layer.name]) {
+
+                            promiseCtrl.customlayerData[layer.name].data = res;
+                            promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+                        }
+                        else {
+                            promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled};
+                        }
                     })
                 );
             }
         });
 
-        var customLayerRender = this;
+        
 
         Promise.all(promisedata).then(function () {
-            //this.ctrl.render();
-            console.log(customLayerRender.panel.customlayers);
+            promiseCtrl.render();
+            promiseCtrl.map.updateStaticLayer();
         });
     }
 
     UpdateCustomDynamicLayer() {
         let promisedata: Promise<void>[] = [];
 
+        var promiseCtrl = this;
         this.panel.customlayers.forEach(layer => {
             if (layer.link && layer.dynamic) {
                 promisedata.push(
                     $.getJSON(layer.link).then(res => {
-                        layer.data = res;
+                        if (promiseCtrl.customlayerData[layer.name]) {
+
+                            promiseCtrl.customlayerData[layer.name].data = res;
+                            promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+                        }
+                        else {
+                            promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled};
+                        }
                     })
                 );
             }
         });
-    }
 
-    GetStaticLayer() {
-        if (this.panel.addStatic) {
-            $.getJSON(this.panel.StaticLayer).then(res => {
-                this.staticLayerContent = res;
-                
-            });
-        }
-        else {
-            this.staticLayerContent = {};
-        }
         
+        Promise.all(promisedata).then(function () {
+            promiseCtrl.render();
+            promiseCtrl.map.updateStaticLayer();
+        });
+
     }
 
   link(scope, elem, attrs, ctrl) {
@@ -426,12 +436,9 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         const map = new WorldMap(ctrl, mapContainer[0]);
         map.createMap();
         ctrl.map = map;
-
-        if (ctrl.panel.addStatic) {
-            if (ctrl.staticLayerContent) {
-                ctrl.map.updateStaticLayer(ctrl.staticLayerContent);
-            }
-        }
+        ctrl.map.updateStaticLayer();
+            
+        
       }
 
          
