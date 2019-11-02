@@ -79,6 +79,8 @@ export default class WorldMap {
 
     updateStaticLayer() {
         this.clearStaticLayer();
+        this.updateControlledLayer();
+
         let features: any[] = [];
 
         if (this.ctrl.customlayerData) {
@@ -101,7 +103,9 @@ export default class WorldMap {
                 }
             });
 
-            this.Controlledlayer = L.control.layers(null, this.switchableLayer).addTo(this.map);
+            if (Object.keys(this.switchableLayer).length > 0) {
+                this.Controlledlayer = L.control.layers(null, this.switchableLayer).addTo(this.map);
+            }
             this.Staticlayer.addData(features);
         }
     }
@@ -113,6 +117,24 @@ export default class WorldMap {
 
         this.Controlledlayer.remove();
 
+    }
+
+    updateControlledLayer() {
+
+        let keysToDelete: string[] = [];
+
+        for (let key in this.switchableLayer) {
+            if ((this.ctrl.customlayerData[key]) && (this.ctrl.customlayerData[key].usercontrolled)) {
+            }
+            else {
+                keysToDelete.push(key);
+            }
+        }
+
+        for (let key of keysToDelete) {
+            delete this.switchableLayer[key];
+        }
+       
     }
 
 
