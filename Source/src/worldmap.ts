@@ -36,9 +36,11 @@ export default class WorldMap {
     ctrl: WorldmapCtrl;
     mapContainer: any;
     circles: any[];
+    arrows: any[];
     map: any;
     legend: any;
-    circlesLayer: any;
+    featuresLayer: any;
+    //circlesLayer
     Staticlayer: any;
     Controlledlayer: any;
     switchableLayer: any;
@@ -47,6 +49,7 @@ export default class WorldMap {
         this.ctrl = ctrl;
         this.mapContainer = mapContainer;
         this.circles = [];
+        this.arrows = [];
         this.switchableLayer = {};
     }
 
@@ -75,6 +78,9 @@ export default class WorldMap {
 
         this.Staticlayer = L.geoJSON().addTo(this.map);
         this.Controlledlayer = L.control.layers(null).addTo(this.map);
+        this.map.on("zoomend", () => {
+            this.drawFeatures();
+        });
     }
 
     updateStaticLayer() {
@@ -94,9 +100,11 @@ export default class WorldMap {
                         if (this.switchableLayer[layer.name]) {
                             this.switchableLayer[layer.name].clearLayers();
                             this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
+                            this.switchableLayer[layer.name].bringToBack();
                         }
                         else {
                             this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data).addTo(this.map);
+                            this.switchableLayer[layer.name].bringToBack();
                         }
 
                     }
@@ -104,9 +112,10 @@ export default class WorldMap {
             });
 
             if (Object.keys(this.switchableLayer).length > 0) {
-                this.Controlledlayer = L.control.layers(null, this.switchableLayer).addTo(this.map);
+                this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
             }
             this.Staticlayer.addData(features);
+            this.Staticlayer.bringToBack();
         }
     }
 
@@ -180,12 +189,17 @@ export default class WorldMap {
         this.legend.addTo(this.map);
     }
 
-    needToRedrawCircles(data) {
-        if (this.circles.length === 0 && data.length > 0) {
+    needToRedrawFeatures(data) {
+
+        if (this.circles.length === 0 && data.length > 0 ) {
             return true;
         }
 
         if (this.circles.length !== data.length) {
+            return true;
+        }
+
+        if (this.arrows.length !== this.circles.length && this.ctrl.panel.featureType === "phasor-clock") {
             return true;
         }
 
@@ -200,43 +214,48 @@ export default class WorldMap {
         });
     }
 
-    clearCircles() {
-        if (this.circlesLayer) {
-            this.circlesLayer.clearLayers();
-            
-            this.removeCircles();
-            this.circles = [];
-            this.circlesLayer = null;
+    drawFeatures() {
+        const data = this.filterEmptyAndZeroValues(this.ctrl.data);
+        if (this.needToRedrawFeatures(data)) {
+            this.clearFeatures();
+            this.createFeatures(data);
+        } else {
+            this.updateFeatures(data);
         }
     }
 
-    drawCircles() {
-        const data = this.filterEmptyAndZeroValues(this.ctrl.data);
-        if (this.needToRedrawCircles(data)) {
-            this.clearCircles();
+    createFeatures(data) {
+        if (this.ctrl.panel.featureType === "circles") {
             this.createCircles(data);
-        } else {
+        }
+        else if (this.ctrl.panel.featureType === "phasor-clock") {
+            this.createClocks(data);
+        }
+
+    }
+
+    clearFeatures() {
+        if (this.featuresLayer) {
+            this.featuresLayer.clearLayers();
+
+            this.removeFeatures();
+            this.circles = [];
+            this.arrows = [];
+            this.featuresLayer = null;
+        }
+
+    }
+
+    updateFeatures(data) {
+        if (this.ctrl.panel.featureType === "circles") {
             this.updateCircles(data);
         }
+        else if (this.ctrl.panel.featureType === "phasor-clock") {
+            this.updateClocks(data);
+        }
     }
 
-    createCircles(data) {
-        const circles: any[] = [];
-        data.forEach(dataPoint => {
-            if (!dataPoint.locationName) {
-                return;
-            }
-            if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
-            }
-            else {
-                circles.push(this.createCircle(dataPoint));
-            }
-
-        });
-        this.circlesLayer = this.addCircles(circles);
-        this.circles = circles;
-    }
-
+    // Section to update and create Circles
     updateCircles(data) {
         data.forEach(dataPoint => {
             if (!dataPoint.locationName) {
@@ -246,6 +265,7 @@ export default class WorldMap {
             const circle = _.find(this.circles, cir => {
                 return cir.options.location === dataPoint.key;
             });
+
 
             if (circle) {
                 circle.setRadius(this.calcCircleSize(dataPoint.value || 0));
@@ -262,6 +282,23 @@ export default class WorldMap {
         });
     }
 
+    createCircles(data) {
+        const circles: any[] = [];
+        data.forEach(dataPoint => {
+            if (!dataPoint.locationName) {
+                return;
+            }
+            if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
+            }
+            else {
+                circles.push(this.createCircle(dataPoint));
+            }
+
+        });
+        this.featuresLayer = this.addFeatures(circles);
+        this.circles = circles;
+    }
+
     createCircle(dataPoint) {
         const circle = (<any>window).L.circleMarker([dataPoint.locationLatitude, dataPoint.locationLongitude], {
             radius: this.calcCircleSize(dataPoint.value || 0),
@@ -275,6 +312,87 @@ export default class WorldMap {
         return circle;
     }
 
+    //End Circle Section
+
+    // Section to update and Create PhasorClocks
+    updateClocks(data) {
+
+        this.updateCircles(data)
+
+        data.forEach(dataPoint => {
+            if (!dataPoint.locationName) {
+                return;
+            }
+
+           
+            const arrow = _.find(this.arrows, arr => {
+                return arr.options.location === dataPoint.key;
+            });
+
+            if (arrow) {
+                let points = [
+                    [dataPoint.locationLatitude, dataPoint.locationLongitude],
+                    this.CalculateEndPoint(dataPoint)];
+                arrow.setLatLngs(points);
+                arrow.setStyle({
+                    color: this.getSecondaryColor(dataPoint.value),
+                    fillColor: this.getSecondaryColor(dataPoint.value),
+                    fillOpacity: 1.0,
+                    location: dataPoint.key,
+                });
+            }
+        });
+    }
+
+    createClocks(data) {
+        const circles: any[] = [];
+        const arrows: any[] = [];
+
+        data.forEach(dataPoint => {
+            if (!dataPoint.locationName) {
+                return;
+            }
+            if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
+            }
+            else {
+                circles.push(this.createCircle(dataPoint));
+                arrows.push(this.createArrow(dataPoint));
+            }
+
+        });
+        this.featuresLayer = this.addFeatures(circles.concat(arrows));
+        this.circles = circles;
+        this.arrows = arrows;
+    }
+
+    createArrow(dataPoint) {
+        const arrow = (<any>window).L.polyline([[dataPoint.locationLatitude, dataPoint.locationLongitude], this.CalculateEndPoint(dataPoint)], {
+            color: this.getSecondaryColor(dataPoint.value),
+            fillColor: this.getSecondaryColor(dataPoint.value),
+            fillOpacity: 1.0,
+            location: dataPoint.key,
+        });
+
+       
+        return arrow;
+    }
+
+    CalculateEndPoint(datapoint) {
+
+        var latlng = (<any>window).L.latLng(datapoint.locationLatitude, datapoint.locationLongitude);
+        let point1 = this.map.project(latlng, this.map.getZoom())
+        let point2 = point1;
+        
+
+        let angle = (datapoint.value || 0);
+        let length = this.calcCircleSize(datapoint.value);
+        point2.x = point1.x + length * Math.cos(angle * Math.PI / 180)
+        point2.y = point1.y + length * Math.sin(angle * Math.PI / 180)
+
+        latlng = this.map.unproject(point2, this.map.getZoom());
+        return [latlng.lat, latlng.lng];
+    }
+    //End PhasporClock Section
     calcCircleSize(dataPointValue) {
         const circleMinSize = parseInt(this.ctrl.panel.circleMinSize, 10) || 2;
         const circleMaxSize = parseInt(this.ctrl.panel.circleMaxSize, 10) || 30;
@@ -348,6 +466,15 @@ export default class WorldMap {
         return _.first(this.ctrl.panel.colors);
     }
 
+    getSecondaryColor(value) {
+        for (let index = this.ctrl.data.secondarythresholds.length; index > 0; index -= 1) {
+            if (value >= this.ctrl.data.secondarythresholds[index - 1]) {
+                return this.ctrl.panel.secondarycolors[index];
+            }
+        }
+        return _.first(this.ctrl.panel.secondarycolors);
+    }
+
     resize() {
         this.map.invalidateSize();
     }
@@ -370,13 +497,13 @@ export default class WorldMap {
         }
     }
 
-    addCircles(circles) {
-        return (<any>window).L.layerGroup(circles).addTo(this.map);
+    addFeatures(layers) {
+        return (<any>window).L.layerGroup(layers).addTo(this.map);
     }
 
-    removeCircles() {
-        this.map.removeLayer(this.circlesLayer);
-        this.circlesLayer = null;
+    removeFeatures() {
+        this.map.removeLayer(this.featuresLayer);
+        this.featuresLayer = null;
         
     }
 
@@ -386,8 +513,10 @@ export default class WorldMap {
 
     remove() {
         this.circles = [];
-        if (this.circlesLayer) {
-            this.removeCircles();
+        this.arrows = [];
+
+        if (this.featuresLayer) {
+            this.removeFeatures();
         }
         if (this.legend) {
             this.removeLegend();

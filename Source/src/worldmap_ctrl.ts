@@ -24,7 +24,16 @@ const panelDefaults = {
     "rgba(245, 54, 54, 0.9)",
     "rgba(237, 129, 40, 0.89)",
     "rgba(50, 172, 45, 0.97)"
-  ],
+    ],
+
+    secondarythresholds: "0,10",
+    secondarycolors: [
+        "rgba(245, 54, 54, 0.9)",
+        "rgba(237, 129, 40, 0.89)",
+        "rgba(50, 172, 45, 0.97)"
+    ],
+
+
   unitSingle: "",
   unitPlural: "",
   showLegend: true,
@@ -45,6 +54,7 @@ const panelDefaults = {
     mapBackground: "CartoDB Dark",
     popupstring: '{PointTag}',
     customlayers: [],
+    featureType: "circles",
 };
 
 const mapCenters = {
@@ -232,7 +242,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       }
       this.data = data;
 
-      this.updateThresholdData();
+        this.updateThresholdData();
+        this.updateSecondaryThresholdData();
 
       if (this.data.length && this.panel.mapCenter === "Last GeoHash") {
         this.centerOnLastGeoHash();
@@ -294,13 +305,18 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
   }
 
     toggleStickyLabels() {
-    this.map.clearCircles();
+        this.map.clearFeatures();
     this.render();
   }
 
     toggleConstantLabels() {
-    this.map.clearCircles();
+    this.map.clearFeatures();
     this.render();
+    }
+
+    setfeaturetype() {
+        //This will be where we handle other stuff
+
     }
 
   changeThresholds() {
@@ -323,6 +339,27 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       this.panel.colors.push(newColor);
     }
   }
+
+    changeSecondaryThresholds() {
+        this.updateSecondaryThresholdData();
+        this.render();
+    }
+
+    updateSecondaryThresholdData() {
+        console.log(this.panel.secondarycolors);
+        this.data.secondarythresholds = this.panel.secondarythresholds.split(",").map(strValue => {
+            return Number(strValue.trim());
+        });
+        while (_.size(this.panel.secondarycolors) > _.size(this.data.secondarythresholds) + 1) {
+            // too many colors. remove the last one.
+            this.panel.secondarycolors.pop();
+        }
+        while (_.size(this.panel.secondarycolors) < _.size(this.data.secondarythresholds) + 1) {
+            // not enough colors. add one.
+            const newColor = "rgba(50, 172, 45, 0.97)";
+            this.panel.secondarycolors.push(newColor);
+        }
+    }
 
   changeLocationData() {
     this.loadLocationDataFromFile(true);
@@ -452,7 +489,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         ctrl.map.createLegend();
       }
 
-      ctrl.map.drawCircles();
+      ctrl.map.drawFeatures();
     }
   }
 }

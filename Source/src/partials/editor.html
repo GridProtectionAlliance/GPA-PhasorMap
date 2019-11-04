@@ -29,6 +29,16 @@
                    placeholder="1" ng-model-onblur />
         </div>
 
+        
+
+        <div class="gf-form">
+            <label class="gf-form-label width-10">Feature Display</label>
+            <div class="gf-form-select-wrapper max-width-10">
+                <select class="input-small gf-form-input" ng-model="ctrl.panel.featureType" ng-options="t for t in ['circles','phasor-clock']"
+                        ng-change="ctrl.setfeaturetype()"></select>
+            </div>
+        </div>
+
         <gf-form-switch class="gf-form" label="Show Legend" label-class="width-10" checked="ctrl.panel.showLegend" on-change="ctrl.toggleLegend()"></gf-form-switch>
         <gf-form-switch class="gf-form" label="Mouse Wheel Zoom" label-class="width-10" checked="ctrl.panel.mouseWheelZoom" on-change="ctrl.toggleMouseWheelZoom()"></gf-form-switch>
         <gf-form-switch class="gf-form" label="Add Static Layer" label-class="width-10" checked="ctrl.panel.addStatic" on-change="ctrl.toogleStatic()">
@@ -229,6 +239,19 @@
             <spectrum-picker class="gf-form-input width-3" ng-repeat="color in ctrl.panel.colors track by $index" ng-model="ctrl.panel.colors[$index]"
                              ng-change="ctrl.changeThresholds()"></spectrum-picker>
         </div>
+
+        <!-- Threshold and coloring for Phases -->
+        <div class="gf-form" ng-show="ctrl.panel.featureType === 'phasor-clock'">
+            <label class="gf-form-label width-10">Phase Thresholds</label>
+            <input type="text" class="input-small gf-form-input width-10" ng-model="ctrl.panel.secondarythresholds" ng-change="ctrl.changeSecondaryThresholds()"
+                   placeholder="0,10" ng-model-onblur />
+        </div>
+        <div class="gf-form" ng-show="ctrl.panel.featureType === 'phasor-clock'">
+            <label class="gf-form-label width-10">Phase Colors</label>
+            <spectrum-picker class="gf-form-input width-3" ng-repeat="color in ctrl.panel.secondarycolors track by $index" ng-model="ctrl.panel.secondarycolors[$index]"
+                             ng-change="ctrl.changeSecondaryThresholds()"></spectrum-picker>
+        </div>
+
 
         <!-- Hide Data -->
         <gf-form-switch class="gf-form" label="With only nulls" label-class="width-10" checked="ctrl.panel.hideEmpty" on-change="ctrl.render()">
