@@ -8,7 +8,7 @@ dist/
 coverage/
 artifacts/
 [Bb]uild/
-vs/
+.vs/
 .venv*
 bin/
 build/
