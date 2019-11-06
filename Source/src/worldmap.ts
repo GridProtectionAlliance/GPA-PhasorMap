@@ -414,10 +414,10 @@ export default class WorldMap {
         if (this.ctrl.panel.locationData === "OpenHistorian") {
             //label = ("<a href='../ParentStatus.cshtml?DeviceID=" + deviceId + "'>" + locationName + "</a>").trim();
             label = this.ctrl.panel.popupstring;
-            label = label.replace("{value}", value);
-            label = label.replace("{deviceID}", point.deviceId);
-            label = label.replace("{PointTag}", point.PointTag);
-            label = label.replace("{deviceName}", point.deviceName);
+            label = label.replace(/{value}/gi, value);
+            label = label.replace(/{deviceID}/gi, point.deviceId);
+            label = label.replace(/{PointTag}/gi, point.PointTag);
+            label = label.replace(/{deviceName}/gi, point.deviceName);
 
         }
         else {
