@@ -41,9 +41,7 @@
 
         <gf-form-switch class="gf-form" label="Show Legend" label-class="width-10" checked="ctrl.panel.showLegend" on-change="ctrl.toggleLegend()"></gf-form-switch>
         <gf-form-switch class="gf-form" label="Mouse Wheel Zoom" label-class="width-10" checked="ctrl.panel.mouseWheelZoom" on-change="ctrl.toggleMouseWheelZoom()"></gf-form-switch>
-        <gf-form-switch class="gf-form" label="Add Static Layer" label-class="width-10" checked="ctrl.panel.addStatic" on-change="ctrl.toogleStatic()">
-        </gf-form-switch>
-
+ 
     </div>
 
     <!-- Data Source Options -->
@@ -269,7 +267,7 @@
         <gf-form-switch class="gf-form" label="Always On" label-class="width-10" checked="ctrl.panel.constantLabels" ng-show="ctrl.panel.stickyLabels" on-change="ctrl.toggleConstantLabels()">
         </gf-form-switch>
 
-        <div class="gf-form" ng-show="ctrl.panel.stickyLabels && ctrl.panel.locationData === 'OpenHistorian'">
+        <div class="gf-form" ng-show="ctrl.panel.locationData === 'OpenHistorian'">
             <label class="gf-form-label width-10">Label Content</label>
             <input type="text" class="input-small gf-form-input width-100" ng-model="ctrl.panel.popupstring" placeholder="Text" ng-model-onblur />
         </div>

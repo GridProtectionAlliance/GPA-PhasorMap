@@ -346,7 +346,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     }
 
     updateSecondaryThresholdData() {
-        console.log(this.panel.secondarycolors);
+        
         this.data.secondarythresholds = this.panel.secondarythresholds.split(",").map(strValue => {
             return Number(strValue.trim());
         });
@@ -392,7 +392,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
             if (layer.link) {
                 promisedata.push(
                     $.getJSON(layer.link).then(res => {
-                        console.log(promiseCtrl.customlayerData)
+                        
                         if (promiseCtrl.customlayerData[layer.name]) {
 
                             promiseCtrl.customlayerData[layer.name].data = res;
