@@ -420,8 +420,16 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         var promiseCtrl = this;
         this.panel.customlayers.forEach(layer => {
             if (layer.link && layer.dynamic) {
+                let layerlink = layer.link;
+                if (this.data && this.data.newestTS) {
+                    layerlink = layerlink.replace(/{LatestTS}/gi, (new Date(this.data.newestTS)).toUTCString());
+                }
+                if (this.data && this.data.oldestTS) {
+                    layerlink = layerlink.replace(/{OldestTS}/gi, (new Date(this.data.oldestTS)).toUTCString());
+                }
+                
                 promisedata.push(
-                    $.getJSON(layer.link).then(res => {
+                    $.getJSON(layerlink).then(res => {
                         if (promiseCtrl.customlayerData[layer.name]) {
 
                             promiseCtrl.customlayerData[layer.name].data = res;
