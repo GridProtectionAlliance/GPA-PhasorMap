@@ -1,49 +1,47 @@
-{
-  "type": "panel",
-  "name": "GPA Phasormap Panel",
-  "id": "grafana-worldmap-panel",
-
-  "info": {
-    "description": "Phasormap panel for Grafana. Extension of the Worldmap panel to integrate with the openHistorian.",
-    "author": {
-      "name": "Grid Protection Alliance",
-      "url": "https://gridprotectionalliance.org"
-    },
-    "keywords": [ "worldmap", "panel", "openhistoian" ],
-    "logos": {
-      "small": "images/gpa-lock.png",
-      "large": "images/gpa-lock.png"
-    },
-    "links": [
-      {
-        "name": "Project site",
-        "url": "https://github.com/GridProtectionAlliance/GPA-PhasorMap"
-      },
-      {
-        "name": "MIT License",
-        "url": "https://github.com/GridProtectionAlliance/GPA-PhasorMap/blob/master/LICENSE"
-      }
-    ],
-    "screenshots": [
-      {
-        "name": "World",
-        "path": "images/worldmap-world.png"
-      },
-      {
-        "name": "USA",
-        "path": "images/worldmap-usa.png"
-      },
-      {
-        "name": "Light Theme",
-        "path": "images/worldmap-light-theme.png"
-      }
-    ],
-    "version": "0.2.1",
-    "updated": "2019-08-29"
-  },
-
-  "dependencies": {
-    "grafanaVersion": "3.x.x",
-    "plugins": []
-  }
-}
+{ 
+"type":"panel", 
+"name":"GPAPhasormap Panel", 
+"id":"grafana-worldmap-panel", 
+"info":{ 
+"description":"Phasormappanel for Grafana. Extension of the Worldmap panel to integrate with the openHistorian.", 
+"author":{ 
+"name":"GridProtection Alliance", 
+"url":"https//gridprotectionalliance.org" 
+}, 
+"keywords":["worldmap", "panel", "openhistoian" ], 
+"logos":{ 
+"small":"images/gpa-lock.png", 
+"large":"images/gpa-lock.png" 
+}, 
+"links":[ 
+{ 
+"name":"Projectsite", 
+"url":"https//github.com/GridProtectionAlliance/GPA-PhasorMap" 
+}, 
+{ 
+"name":"MITLicense", 
+"url":"https//github.com/GridProtectionAlliance/GPA-PhasorMap/blob/master/LICENSE" 
+} 
+], 
+"screenshots":[ 
+{ 
+"name":"World", 
+"path":"images/worldmap-world.png" 
+}, 
+{ 
+"name":"USA", 
+"path":"images/worldmap-usa.png" 
+}, 
+{ 
+"name":"LightTheme", 
+"path":"images/worldmap-light-theme.png" 
+} 
+], 
+"version":"0.2.1", 
+"updated": "2019-11-07" 
+}, 
+"dependencies":{ 
+"grafanaVersion":"3.x.x", 
+"plugins":[] 
+} 
+} 

@@ -28,11 +28,41 @@
 ::*******************************************************************************************************
 
 @ECHO OFF
-SetLocal
+SetLocal enabledelayedexpansion
 
 IF NOT "%1" == "" (SET logFlag=  "..\Build\Scripts\%1")
 IF "%1" == "" (SET logFlag=NUL)
 CD ..\..\Source\
+
+set filename= .\src\plugin.json
+if exist "%filename%.temp" del "%filename%.temp"
+type NUL> %filename%.temp
+
+for /f "delims=" %%a in (' powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
+
+
+for /f "tokens=1-2* delims=: " %%A in (%filename%) do (
+
+IF %%A == "version" (
+	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET version=%%y
+	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET preversion=%%x
+	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
+	SET \A version = version+1;
+	ECHO "version":!preversion!.!version!.!postversion! >> %filename%.temp
+	) ELSE IF %%A == "updated"  (
+	ECHO "updated": "%updateDate%" >> %filename%.temp
+	) ELSE (
+	IF NOT "%%B" == "" (
+	  echo %%A:%%B%%C >> %filename%.temp
+	  ) ELSE (
+	  echo %%A%%C >> %filename%.temp
+	  )
+	 )
+ )
+ 
+del %filename%
+ren %filename%.temp plugin.json
+
 ECHO Install NPM > %logFlag%
 CALL npm install  >> %logFlag%
 ECHO BUILD TS >> %logFlag%
@@ -42,7 +72,4 @@ CD ..\Build\
 ECHO Create ZIP >> %logFlag%
 Powershell -COMMAND Compress-Archive -Path .\Output\Release\dist -DestinationPath .\PhasorMapBinaries.zip >> %logFlag%
 EndLocal
-
-
-
 
