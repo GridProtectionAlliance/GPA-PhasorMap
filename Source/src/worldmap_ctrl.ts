@@ -370,7 +370,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     }
 
     AddCustomLayer() {
-        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false});
+        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson"});
         this.UpdateCustomLayer();
     }
 
@@ -382,52 +382,78 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
        
     }
 
-    UpdateCustomLayer() {
+	ChangedlayerData(layer) {
+		if (this.customlayerData[layer.name]) {
+			this.customlayerData[layer.name].forceReload = true;
+		}
+		this.UpdateCustomLayer();
+
+	}
+
+	UpdateCustomLayer() {
         let promisedata: Promise<void>[] = [];
 
         this.customlayerData = {};
 
         var promiseCtrl = this;
-        this.panel.customlayers.forEach(layer => {
-            if (layer.link) {
-                promisedata.push(
-                    $.getJSON(layer.link).then(res => {
-                        
-                        if (promiseCtrl.customlayerData[layer.name]) {
+		this.panel.customlayers.forEach(layer => {
+			let layerlink = layer.link;
+			if (this.data && this.data.newestTS) {
+				layerlink = layerlink.replace(/{LatestTS}/gi, (new Date(this.data.newestTS)).toUTCString());
+			}
+			if (this.data && this.data.oldestTS) {
+				layerlink = layerlink.replace(/{OldestTS}/gi, (new Date(this.data.oldestTS)).toUTCString());
+			}
 
-                            promiseCtrl.customlayerData[layer.name].data = res;
-                            promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
-                        }
-                        else {
-                            promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled};
-                        }
-                    })
-                );
-            }
+			if (layer.link && layer.type == "geojson") {
+				promisedata.push(
+					$.getJSON(layerlink).then(res => {
+
+						if (promiseCtrl.customlayerData[layer.name]) {
+
+							promiseCtrl.customlayerData[layer.name].data = res;
+							promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+						}
+						else {
+							promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "geojson", forceReload: false };
+						}
+					})
+				);
+			}
+			else if (layer.link && layer.type == "wms") {
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: false }
+			}
+			else if (layer.link && layer.type == "tile") {
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "tile", forceReload: false }
+			}
+			else { console.log(layer);}
         });
 
         
 
-        Promise.all(promisedata).then(function () {
+		Promise.all(promisedata).then(function () {
             promiseCtrl.render();
             promiseCtrl.map.updateStaticLayer();
         });
     }
 
-    UpdateCustomDynamicLayer() {
+	UpdateCustomDynamicLayer() {
+
         let promisedata: Promise<void>[] = [];
+		
 
         var promiseCtrl = this;
-        this.panel.customlayers.forEach(layer => {
-            if (layer.link && layer.dynamic) {
-                let layerlink = layer.link;
-                if (this.data && this.data.newestTS) {
-                    layerlink = layerlink.replace(/{LatestTS}/gi, (new Date(this.data.newestTS)).toUTCString());
-                }
-                if (this.data && this.data.oldestTS) {
-                    layerlink = layerlink.replace(/{OldestTS}/gi, (new Date(this.data.oldestTS)).toUTCString());
-                }
-                
+		this.panel.customlayers.forEach(layer => {
+
+			let layerlink = layer.link;
+			if (this.data && this.data.newestTS) {
+				layerlink = layerlink.replace(/{LatestTS}/gi, (new Date(this.data.newestTS)).toUTCString());
+			}
+			if (this.data && this.data.oldestTS) {
+				layerlink = layerlink.replace(/{OldestTS}/gi, (new Date(this.data.oldestTS)).toUTCString());
+			}
+
+			if (layer.link && layer.dynamic && layer.type == "geojson") {               
                 promisedata.push(
                     $.getJSON(layerlink).then(res => {
                         if (promiseCtrl.customlayerData[layer.name]) {
@@ -436,17 +462,24 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
                             promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
                         }
                         else {
-                            promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled};
+							promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "geojson", forceReload: false};
                         }
                     })
                 );
-            }
+			}
+			else if (layer.link && layer.dynamic && layer.type == "wms") {
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: false }
+			}
+			else if (layer.link && layer.dynamic && layer.type == "tile") {
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "tile", forceReload: false }
+			}
         });
 
         
-        Promise.all(promisedata).then(function () {
+		Promise.all(promisedata).then(function () {
             promiseCtrl.render();
-            promiseCtrl.map.updateStaticLayer();
+			promiseCtrl.map.updateStaticLayer();
+			
         });
 
     }
@@ -482,7 +515,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         map.createMap();
         ctrl.map = map;
         ctrl.map.updateStaticLayer();
-            
+		this.UpdateCustomLayer()    
         
       }
 

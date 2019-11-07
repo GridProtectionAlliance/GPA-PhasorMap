@@ -289,8 +289,6 @@ export default class DataFormatter {
                     location = { longitude: null, latitude: null, DeviceID: null, Device: null, PointTag: null };
                 }
 
-                console.log(point);
-
                 let val = Number.NaN;
                 let TSmin = Number.MAX_VALUE;
                 let TSmax = 0;

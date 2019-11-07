@@ -11,8 +11,8 @@
     },
     "keywords": [ "worldmap", "panel", "openhistoian" ],
     "logos": {
-      "small": "images/gpa-lock.svg",
-      "large": "images/gpa-lock.svg"
+      "small": "images/gpa-lock.png",
+      "large": "images/gpa-lock.png"
     },
     "links": [
       {

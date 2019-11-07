@@ -28,7 +28,7 @@ export const tileServers = {
             '&copy; <a href="http://viewfinderpanoramas.org"> SRTM < /a>' +
             '&copy; < a href="https://opentopomap.org"> OpenTopoMap < /a>' +
             '&copy; (<a href="https://creativecommons.org/licenses/by-sa/3.0/"> CC - BY - SA < /a>)',
-        subdomains: 'abcd',
+        subdomains: 'abc',
     }
 }
 
@@ -44,13 +44,16 @@ export default class WorldMap {
     Staticlayer: any;
     Controlledlayer: any;
     switchableLayer: any;
+	staticSeperateLayer: any[];
+	backgroundlayer: any;
 
     constructor(ctrl, mapContainer) {
         this.ctrl = ctrl;
         this.mapContainer = mapContainer;
         this.circles = [];
         this.arrows = [];
-        this.switchableLayer = {};
+		this.switchableLayer = {};
+		this.staticSeperateLayer = [];
     }
 
     createMap() {
@@ -67,8 +70,8 @@ export default class WorldMap {
 
         this.setMouseWheelZoom();
 
-        const selectedTileServer = tileServers[this.ctrl.tileServer];
-        (<any>window).L.tileLayer(selectedTileServer.url, {
+		const selectedTileServer = tileServers[this.ctrl.tileServer];
+		this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
             maxZoom: 18,
             subdomains: selectedTileServer.subdomains,
             reuseTiles: true,
@@ -88,28 +91,61 @@ export default class WorldMap {
         this.updateControlledLayer();
 
         let features: any[] = [];
+		this.staticSeperateLayer = [];
+		
 
-        if (this.ctrl.customlayerData) {
+		if (this.ctrl.customlayerData) {
             this.ctrl.panel.customlayers.forEach(layer => {
                 if (this.ctrl.customlayerData[layer.name]) {
-                    if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled) {
-                        features.push(this.ctrl.customlayerData[layer.name].data);
+					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
+						features.push(this.ctrl.customlayerData[layer.name].data);
 
-                    }
-                    else if (this.ctrl.customlayerData[layer.name].data) {
-                        if (this.switchableLayer[layer.name]) {
-                            this.switchableLayer[layer.name].clearLayers();
-                            this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
-                            this.switchableLayer[layer.name].bringToBack();
-                        }
-                        else {
-                            this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data).addTo(this.map);
-                            this.switchableLayer[layer.name].bringToBack();
-                        }
+					}
+					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "geojson") {
+						if (this.switchableLayer[layer.name]) {
+							this.switchableLayer[layer.name].clearLayers();
+							this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
+							this.switchableLayer[layer.name].bringToBack();
+						}
+						else {
+							this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data).addTo(this.map);
+							this.switchableLayer[layer.name].bringToBack();
+						}
 
-                    }
+					}
+					else if (!layer.usercontrolled && layer.type == "wms") {
+						console.log("static wms layers no yet implemented");
+					}
+					else if (layer.type == "wms") {
+						console.log("Dynamic wms layers not yet implemented");
+					}
+					else if (!layer.usercontrolled && layer.type == "tile") {
+						
+						this.staticSeperateLayer.push( L.tileLayer(layer.link, {
+								reuseTiles: true,
+								detectRetina: true,
+								opacity: 1.0,
+							}).addTo(this.map));
+						this.staticSeperateLayer.pop().bringToBack();
+								
+					}
+					else if (layer.type == "tile") {
+						if (! this.switchableLayer[layer.name]) {
+							this.switchableLayer[layer.name] = L.tileLayer(layer.link, {
+								reuseTiles: true,
+								detectRetina: true,
+								opacity: 1.0,
+							});
+							this.switchableLayer[layer.name].bringToBack();
+						}						
+					}
+
                 }
             });
+
+			if (this.backgroundlayer) {
+				this.backgroundlayer.bringToBack();
+			}
 
             if (Object.keys(this.switchableLayer).length > 0) {
                 this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
@@ -124,6 +160,10 @@ export default class WorldMap {
         this.Staticlayer.remove();
         this.Staticlayer = L.geoJSON().addTo(this.map);
 
+		this.staticSeperateLayer.forEach(layer => {
+			layer.remove();
+		});
+
         this.Controlledlayer.remove();
 
     }
@@ -133,10 +173,12 @@ export default class WorldMap {
         let keysToDelete: string[] = [];
 
         for (let key in this.switchableLayer) {
-            if ((this.ctrl.customlayerData[key]) && (this.ctrl.customlayerData[key].usercontrolled)) {
+			if ((this.ctrl.customlayerData[key]) && (this.ctrl.customlayerData[key].usercontrolled) && (!this.ctrl.customlayerData[key].forceReload)) {
+				this.ctrl.customlayerData[key].forceReload = false;
             }
             else {
-                keysToDelete.push(key);
+				keysToDelete.push(key);
+				this.ctrl.customlayerData[key].forceReload = true;
             }
         }
 
@@ -149,7 +191,7 @@ export default class WorldMap {
 
     updateBaseLayer() {
         const selectedTileServer = tileServers[this.ctrl.tileServer];
-        (<any>window).L.tileLayer(selectedTileServer.url, {
+		this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
             maxZoom: 18,
             subdomains: selectedTileServer.subdomains,
             reuseTiles: true,
@@ -209,8 +251,8 @@ export default class WorldMap {
     }
 
     filterEmptyAndZeroValues(data) {
-        return _.filter(data, o => {
-            return !(this.ctrl.panel.hideEmpty && _.isNil(o.value)) && !(this.ctrl.panel.hideZero && o.value === 0);
+		return _.filter(data, o => {
+			return !(this.ctrl.panel.hideEmpty && _.isNil(o.value)) && !(this.ctrl.panel.hideZero && o.value === 0) && !(this.ctrl.panel.hideEmpty && Number.isNaN(o.value));
         });
     }
 
@@ -387,7 +429,7 @@ export default class WorldMap {
         let angle = (datapoint.value || 0);
         let length = this.calcCircleSize(datapoint.value);
         point2.x = point1.x + length * Math.cos(angle * Math.PI / 180)
-        point2.y = point1.y + length * Math.sin(angle * Math.PI / 180)
+        point2.y = point1.y - length * Math.sin(angle * Math.PI / 180)
 
         latlng = this.map.unproject(point2, this.map.getZoom());
         return [latlng.lat, latlng.lng];
