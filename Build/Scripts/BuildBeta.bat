@@ -30,6 +30,8 @@
 @ECHO OFF
 SetLocal enabledelayedexpansion
 
+ECHO Starting Build
+ECHO %CD%
 IF NOT "%1" == "" (SET logFlag=  "..\Build\Scripts\%1")
 IF "%1" == "" (SET logFlag=NUL)
 CD ..\..\Source\ >> %logFlag%
