@@ -32,10 +32,10 @@ SetLocal enabledelayedexpansion
 
 IF NOT "%1" == "" (SET logFlag=  "..\Build\Scripts\%1")
 IF "%1" == "" (SET logFlag=NUL)
-CD ..\..\Source\
+CD ..\..\Source\ >> %logFlag%
 
-set filename= .\src\plugin.json
-if exist "%filename%.temp" del "%filename%.temp"
+set filename= .\src\plugin.json 
+if exist "%filename%.temp" del "%filename%.temp" >> %logFlag%
 type NUL> %filename%.temp
 
 for /f "delims=" %%a in (' powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
@@ -60,15 +60,15 @@ IF %%A == "version" (
 	 )
  )
  
-del %filename%
-ren %filename%.temp plugin.json
+del %filename% >> %logFlag%
+ren %filename%.temp plugin.json >> %logFlag%
 
-ECHO Install NPM > %logFlag%
+ECHO Install NPM >> %logFlag%
 CALL npm install  >> %logFlag%
 ECHO BUILD TS >> %logFlag%
 CALL .\node_modules\.bin\webpack  --mode=production >> %logFlag%
 
-CD ..\Build\
+CD ..\Build\ >> %logFlag%
 ECHO Create ZIP >> %logFlag%
 Powershell -COMMAND Compress-Archive -Path .\Output\Release\dist -DestinationPath .\PhasorMapBinaries.zip >> %logFlag%
 EndLocal
