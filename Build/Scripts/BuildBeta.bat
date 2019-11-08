@@ -45,10 +45,12 @@ set filename= .\src\plugin.json
 if exist "%filename%.temp" ( ECHO Found Temp FIle)
 
 if exist "%filename%.temp" ( del "%filename%.temp" >> %logFlag% )
-type NUL> %filename%.temp
+copy NUL "%filename%.temp"
 
 for /f "delims=" %%a in (' powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
 
+if exist "%filename%" ( ECHO Found actual FIle)
+ECHO Processing Version File
 
 for /f "tokens=1-2* delims=: " %%A in (%filename%) do (
 
