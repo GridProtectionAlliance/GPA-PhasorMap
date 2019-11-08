@@ -33,11 +33,15 @@ SetLocal enabledelayedexpansion
 ECHO Starting Build
 ECHO %CD%
 IF NOT "%1" == "" (SET logFlag=  "..\Build\Scripts\%1")
+IF NOT "%1" == "" (SET logFlagLocal=  "%1")
+
 IF "%1" == "" (SET logFlag=NUL)
-CD ..\..\Source\ >> %logFlag%
+IF "%1" == "" (SET logFlagLocal=NUL)
+
+CD ..\..\Source\ >> %logFlagLocal%
 
 set filename= .\src\plugin.json 
-if exist "%filename%.temp" del "%filename%.temp" >> %logFlag%
+if exist "%filename%.temp" ( del "%filename%.temp" >> %logFlag% )
 type NUL> %filename%.temp
 
 for /f "delims=" %%a in (' powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
