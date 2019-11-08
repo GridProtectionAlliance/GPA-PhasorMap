@@ -29,8 +29,16 @@ export const tileServers = {
             '&copy; < a href="https://opentopomap.org"> OpenTopoMap < /a>' +
             '&copy; (<a href="https://creativecommons.org/licenses/by-sa/3.0/"> CC - BY - SA < /a>)',
         subdomains: 'abc',
-    }
+	},
+	'Stamen TerrainBackground': {
+		url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain-background/{z}/{x}/{y}{r}.png',
+		attribution: '&copy; <a href="http://stamen.com">Stamen Design</a> ' +
+			'&copy; <a href="http://creativecommons.org/licenses/by/3.0"> CC BY 3.0 < /a> ' + 
+			'& copy; < a href="https:/ / www.openstreetmap.org / copyright" > OpenStreetMap < /a>',
+		subdomains: 'abcd'
+	}
 }
+
 
 export default class WorldMap {
     ctrl: WorldmapCtrl;
