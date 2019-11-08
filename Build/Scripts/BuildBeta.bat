@@ -39,8 +39,11 @@ IF "%1" == "" (SET logFlag=NUL)
 IF "%1" == "" (SET logFlagLocal=NUL)
 
 CD ..\..\Source\ >> %logFlagLocal%
+ECHO %CD% >> %logFlag%
 
 set filename= .\src\plugin.json 
+if exist "%filename%.temp" ( ECHO Found Temp FIle)
+
 if exist "%filename%.temp" ( del "%filename%.temp" >> %logFlag% )
 type NUL> %filename%.temp
 
