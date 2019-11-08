@@ -8,6 +8,7 @@ import "./css/worldmap-panel.css";
 import $ from "jquery";
 import "./css/leaflet.css";
 import WorldMap from "./worldmap";
+import moment from 'moment';
 
 const panelDefaults = {
   maxDataPoints: 1,
@@ -370,7 +371,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     }
 
     AddCustomLayer() {
-        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson"});
+        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson", opacity: "1.0", forceReload: false});
         this.UpdateCustomLayer();
     }
 
@@ -383,9 +384,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
     }
 
 	ChangedlayerData(layer) {
-		if (this.customlayerData[layer.name]) {
-			this.customlayerData[layer.name].forceReload = true;
-		}
+		layer.forceReload = true;
+		
 		this.UpdateCustomLayer();
 
 	}
@@ -395,36 +395,42 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
 
         this.customlayerData = {};
 
-        var promiseCtrl = this;
+		var promiseCtrl = this;
+
 		this.panel.customlayers.forEach(layer => {
 			let layerlink = layer.link;
 			if (this.data && this.data.newestTS) {
-				layerlink = layerlink.replace(/{LatestTS}/gi, (new Date(this.data.newestTS)).toUTCString());
+				layerlink = layerlink.replace(/{LatestTS}/gi, moment(this.data.newestTS).format("DD-MM-YYYYTHH-mm-ss"));
 			}
 			if (this.data && this.data.oldestTS) {
-				layerlink = layerlink.replace(/{OldestTS}/gi, (new Date(this.data.oldestTS)).toUTCString());
+				layerlink = layerlink.replace(/{OldestTS}/gi, moment(this.data.oldestTS).format("DD-MM-YYYYTHH-mm-ss"));
 			}
 
 			if (layer.link && layer.type == "geojson") {
-				promisedata.push(
-					$.getJSON(layerlink).then(res => {
+					promisedata.push(
+						$.getJSON(layerlink).then(res => {
+							if (promiseCtrl.customlayerData[layer.name]) {
 
-						if (promiseCtrl.customlayerData[layer.name]) {
-
-							promiseCtrl.customlayerData[layer.name].data = res;
-							promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
-						}
-						else {
-							promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "geojson", forceReload: false };
-						}
-					})
-				);
+								promiseCtrl.customlayerData[layer.name].data = res;
+								promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+								promiseCtrl.customlayerData[layer.name].forceReload = true;
+								layer.forceReload = false;
+							}
+							else {
+								promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "geojson", forceReload: layer.forceReload };
+								layer.forceReload = false;
+							}
+						}).catch(e => {
+						})
+					);
 			}
 			else if (layer.link && layer.type == "wms") {
 				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: false }
+				layer.forceReload = false;
 			}
 			else if (layer.link && layer.type == "tile") {
-				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "tile", forceReload: false }
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "tile", forceReload: layer.forceReload, oppacity: parseFloat(layer.opacity) }
+				layer.forceReload = false;
 			}
 			else { console.log(layer);}
         });
@@ -446,32 +452,35 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
 		this.panel.customlayers.forEach(layer => {
 
 			let layerlink = layer.link;
+
 			if (this.data && this.data.newestTS) {
-				layerlink = layerlink.replace(/{LatestTS}/gi, (new Date(this.data.newestTS)).toUTCString());
+				layerlink = layerlink.replace(/{LatestTS}/gi, moment(this.data.newestTS).format("DD-MM-YYYYTHH-mm-ss"));
 			}
 			if (this.data && this.data.oldestTS) {
-				layerlink = layerlink.replace(/{OldestTS}/gi, (new Date(this.data.oldestTS)).toUTCString());
+				layerlink = layerlink.replace(/{OldestTS}/gi, moment(this.data.oldestTS).format("DD-MM-YYYYTHH-mm-ss"));
 			}
 
-			if (layer.link && layer.dynamic && layer.type == "geojson") {               
-                promisedata.push(
-                    $.getJSON(layerlink).then(res => {
-                        if (promiseCtrl.customlayerData[layer.name]) {
+			if (layer.link && layer.dynamic && layer.type == "geojson") {            
+					promisedata.push(
+						$.getJSON(layerlink).then(res => {
+							if (promiseCtrl.customlayerData[layer.name]) {
 
-                            promiseCtrl.customlayerData[layer.name].data = res;
-                            promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
-                        }
-                        else {
-							promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "geojson", forceReload: false};
-                        }
-                    })
-                );
+								promiseCtrl.customlayerData[layer.name].data = res;
+								promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+								promiseCtrl.customlayerData[layer.name].forceReload = true;
+								layer.forceReload = false;
+							}
+							else {
+								promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "geojson", forceReload: layer.forceReload };
+								layer.forceReload = false;
+							}
+						}).catch(e => {
+						})
+					);
+
 			}
 			else if (layer.link && layer.dynamic && layer.type == "wms") {
 				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: false }
-			}
-			else if (layer.link && layer.dynamic && layer.type == "tile") {
-				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "tile", forceReload: false }
 			}
         });
 
@@ -515,7 +524,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
         map.createMap();
         ctrl.map = map;
         ctrl.map.updateStaticLayer();
-		this.UpdateCustomLayer()    
+		ctrl.UpdateCustomLayer()    
         
       }
 

@@ -93,7 +93,7 @@ export default class WorldMap {
         let features: any[] = [];
 		this.staticSeperateLayer = [];
 		
-
+		
 		if (this.ctrl.customlayerData) {
             this.ctrl.panel.customlayers.forEach(layer => {
                 if (this.ctrl.customlayerData[layer.name]) {
@@ -120,21 +120,22 @@ export default class WorldMap {
 						console.log("Dynamic wms layers not yet implemented");
 					}
 					else if (!layer.usercontrolled && layer.type == "tile") {
-						
-						this.staticSeperateLayer.push( L.tileLayer(layer.link, {
+						this.staticSeperateLayer.push(L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
 								reuseTiles: true,
 								detectRetina: true,
-								opacity: 1.0,
+								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							}).addTo(this.map));
-						this.staticSeperateLayer.pop().bringToBack();
+						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
 								
 					}
 					else if (layer.type == "tile") {
-						if (! this.switchableLayer[layer.name]) {
-							this.switchableLayer[layer.name] = L.tileLayer(layer.link, {
+
+						if (!this.switchableLayer[layer.name]) {
+
+							this.switchableLayer[layer.name] = L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
 								reuseTiles: true,
 								detectRetina: true,
-								opacity: 1.0,
+								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							});
 							this.switchableLayer[layer.name].bringToBack();
 						}						
@@ -155,13 +156,13 @@ export default class WorldMap {
         }
     }
 
-    clearStaticLayer() {
+	clearStaticLayer() {
         this.Staticlayer.clearLayers();
         this.Staticlayer.remove();
         this.Staticlayer = L.geoJSON().addTo(this.map);
 
 		this.staticSeperateLayer.forEach(layer => {
-			layer.remove();
+			this.map.removeLayer(layer);
 		});
 
         this.Controlledlayer.remove();
@@ -178,11 +179,12 @@ export default class WorldMap {
             }
             else {
 				keysToDelete.push(key);
-				this.ctrl.customlayerData[key].forceReload = true;
+				this.ctrl.customlayerData[key].forceReload = false;
             }
         }
 
-        for (let key of keysToDelete) {
+		for (let key of keysToDelete) {
+			this.map.removeLayer(this.switchableLayer[key]);
             delete this.switchableLayer[key];
         }
        

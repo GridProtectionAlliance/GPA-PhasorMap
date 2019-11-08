@@ -294,7 +294,7 @@ export default class DataFormatter {
                 let TSmax = 0;
                 if (point.datapoints[0]) {
                     TSmin = point.datapoints[0][1];
-                    TSmax = point.datapoints.pop()[1];
+					TSmax = point.datapoints[point.datapoints.length -1][1];
                 }
                 if (!point.datapoints[0]) {
                     val = Number.NaN;
