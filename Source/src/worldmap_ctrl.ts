@@ -7,7 +7,7 @@ import DataFormatter from "./data_formatter";
 import "./css/worldmap-panel.css";
 import $ from "jquery";
 import "./css/leaflet.css";
-import WorldMap from "./worldmap";
+import PhasorMap from "./worldmap";
 import moment from 'moment';
 
 const panelDefaults = {
@@ -67,7 +67,7 @@ const mapCenters = {
   "Last GeoHash": { mapCenterLatitude: 0, mapCenterLongitude: 0 }
 };
 
-export default class WorldmapCtrl extends MetricsPanelCtrl {
+export default class PhasorMapCtrl extends MetricsPanelCtrl {
   static templateUrl = "partials/module.html";
 
   dataFormatter: DataFormatter;
@@ -172,7 +172,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       this.panel.locationData !== "json result"
     ) {
       $.getJSON(
-        "public/plugins/grafana-worldmap-panel/data/" +
+        "public/plugins/grafana-pmumap-panel/data/" +
           this.panel.locationData +
           ".json"
       ).then(this.reloadLocations.bind(this));
@@ -206,8 +206,8 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
 
   onInitEditMode() {
     this.addEditorTab(
-      "Worldmap",
-      "public/plugins/grafana-worldmap-panel/partials/editor.html",
+      "Phasormap",
+      "public/plugins/grafana-pmumap-panel/partials/editor.html",
       2
     );
   }
@@ -520,7 +520,7 @@ export default class WorldmapCtrl extends MetricsPanelCtrl {
       }
 
       if (!ctrl.map) {
-        const map = new WorldMap(ctrl, mapContainer[0]);
+        const map = new PhasorMap(ctrl, mapContainer[0]);
         map.createMap();
         ctrl.map = map;
         ctrl.map.updateStaticLayer();

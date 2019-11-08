@@ -68,7 +68,7 @@ const conf = {
           },
           'ts-loader',
         ],
-        exclude: /(node_modules)/,
+        exclude: /node_modules/,
       },
       {
         test: /\.css$/,

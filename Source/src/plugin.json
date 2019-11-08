@@ -1,14 +1,14 @@
 { 
 "type":"panel", 
-"name":"GPAPhasormap Panel", 
-"id":"grafana-worldmap-panel", 
+"name":"GPA Phasormap", 
+"id":"grafana-pmumap-panel", 
 "info":{ 
-"description":"Phasormappanel for Grafana. Extension of the Worldmap panel to integrate with the openHistorian.", 
+"description":"Phasor-map panel for Grafana. Extension of the Worldmap panel to integrate with the openHistorian.", 
 "author":{ 
 "name":"GridProtection Alliance", 
 "url":"https//gridprotectionalliance.org" 
 }, 
-"keywords":["worldmap", "panel", "openhistoian" ], 
+"keywords":["worldmap", "panel", "openhistorian" ], 
 "logos":{ 
 "small":"images/gpa-lock.png", 
 "large":"images/gpa-lock.png" 

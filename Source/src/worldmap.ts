@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as L from './libs/leaflet';
-import WorldmapCtrl from './worldmap_ctrl';
+import PhasorMapCtrl from './worldmap_ctrl';
 
 export const tileServers = {
   'CartoDB Positron': {
@@ -35,13 +35,13 @@ export const tileServers = {
 		attribution: '&copy; <a href="http://stamen.com">Stamen Design</a> ' +
 			'&copy; <a href="http://creativecommons.org/licenses/by/3.0"> CC BY 3.0 < /a> ' + 
 			'& copy; < a href="https:/ / www.openstreetmap.org / copyright" > OpenStreetMap < /a>',
-		subdomains: 'abcd'
+		subdomains: 'abc'
 	}
 }
 
 
-export default class WorldMap {
-    ctrl: WorldmapCtrl;
+export default class PhasorMap {
+	ctrl: PhasorMapCtrl;
     mapContainer: any;
     circles: any[];
     arrows: any[];
