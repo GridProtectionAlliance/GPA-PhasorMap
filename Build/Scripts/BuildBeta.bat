@@ -31,56 +31,31 @@
 SetLocal enabledelayedexpansion
 
 ECHO Starting Build
-ECHO %CD%
-IF NOT "%1" == "" (SET logFlag=  "..\Build\Scripts\%1")
-IF NOT "%1" == "" (SET logFlagLocal=  "%1")
 
-IF "%1" == "" (SET logFlag=NUL)
-IF "%1" == "" (SET logFlagLocal=NUL)
+SET LogPath=..\Build\Scripts\
+IF NOT "%1" == "" (SET logFile=%1)
 
-CD ..\..\Source\ >> %logFlagLocal%
-ECHO %CD% >> %logFlag%
+SET buildFolder=..\Output\Release\dist
+copy NUL "%logFile%"
 
-set filename= .\src\plugin.json 
-if exist "%filename%.temp" ( ECHO Found Temp FIle)
+CD "..\..\Source\" 
+ECHO Changed Path To %CD% >> %LogPath%%logFile%
+CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% .\src\version.json
 
-if exist "%filename%.temp" ( del "%filename%.temp" >> %logFlag% )
-copy NUL "%filename%.temp"
+ECHO Install NPM >> %LogPath%%logFile%
+CALL npm install  >> %LogPath%%logFile%
+ECHO Run Yarn >> %LogPath%%logFile%
+CALL .\node_modules\.bin\yarn >> %LogPath%%logFile%
+ECHO BUILD TS >> %LogPath%%logFile%
+CALL .\node_modules\.bin\webpack  --mode=production >> %LogPath%%logFile%
 
-for /f "delims=" %%a in (' powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
+CD ..\Build\Scripts\
+ECHO Changed Path to %CD% >> %logFile%
+ECHO Create ZIP >> %logFile%
 
-if exist "%filename%" ( ECHO Found actual FIle)
-ECHO Processing Version File
-
-for /f "tokens=1-2* delims=: " %%A in (%filename%) do (
-
-IF %%A == "version" (
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET version=%%y
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET preversion=%%x
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
-	SET \A version = version+1;
-	ECHO "version":!preversion!.!version!.!postversion! >> %filename%.temp
-	) ELSE IF %%A == "updated"  (
-	ECHO "updated": "%updateDate%" >> %filename%.temp
-	) ELSE (
-	IF NOT "%%B" == "" (
-	  echo %%A:%%B%%C >> %filename%.temp
-	  ) ELSE (
-	  echo %%A%%C >> %filename%.temp
-	  )
-	 )
- )
- 
-del %filename% >> %logFlag%
-ren %filename%.temp plugin.json >> %logFlag%
-
-ECHO Install NPM >> %logFlag%
-CALL npm install  >> %logFlag%
-ECHO BUILD TS >> %logFlag%
-CALL .\node_modules\.bin\webpack  --mode=production >> %logFlag%
-
-CD ..\Build\ >> %logFlag%
-ECHO Create ZIP >> %logFlag%
-Powershell -COMMAND Compress-Archive -Path .\Output\Release\dist -DestinationPath .\PhasorMapBinaries.zip >> %logFlag%
+MKDIR ..\grafana-pmumap-panel\
+XCOPY %buildfolder% ..\grafana-pmumap-panel /E /Y >> %logFile%
+IF Exist (..\PhasorMapBinaries.zip) (del "..\PhasorMapBinaries.zip" >> %logFile% )
+Powershell -COMMAND Compress-Archive -Path ..\grafana-pmumap-panel -DestinationPath ..\PhasorMapBinaries.zip >> %logFile%
 EndLocal
 
