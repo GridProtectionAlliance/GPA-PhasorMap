@@ -30,17 +30,15 @@ export const tileServers = {
             '&copy; (<a href="https://creativecommons.org/licenses/by-sa/3.0/"> CC - BY - SA < /a>)',
         subdomains: 'abc',
 	},
-	'Stamen TerrainBackground': {
-		url: 'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain-background/{z}/{x}/{y}{r}.png',
-		attribution: '&copy; <a href="http://stamen.com">Stamen Design</a> ' +
-			'&copy; <a href="http://creativecommons.org/licenses/by/3.0"> CC BY 3.0 < /a> ' + 
-			'& copy; < a href="https:/ / www.openstreetmap.org / copyright" > OpenStreetMap < /a>',
-		subdomains: 'abc'
-	},
 	'Esri WorldPhysical': {
-		url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}',
-		attribution: 'Tiles © Esri — Source: US National Park Service',
-		maxZoom: 8
+		url: 'https://se{s}ver.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}',
+		attribution: 'Tiles &copy Esri — Source: US National Park Service',
+		subdomains: 'r'
+	},
+	'Esri NatGeo': {
+		url: 'https://se{s}ver.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
+		attribution: 'Tiles &copy Esri —  National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC',
+		subdomains: 'r'
 	}
 
 }
@@ -58,6 +56,7 @@ export default class PhasorMap {
     switchableLayer: any;
 	staticSeperateLayer: any[];
 	backgroundlayer: any;
+	previousZoom: number;
 
     constructor(ctrl, mapContainer) {
         this.ctrl = ctrl;
@@ -66,6 +65,7 @@ export default class PhasorMap {
         this.arrows = [];
 		this.switchableLayer = {};
 		this.staticSeperateLayer = [];
+		this.previousZoom = 0;
     }
 
     createMap() {
@@ -82,7 +82,20 @@ export default class PhasorMap {
 
         this.setMouseWheelZoom();
 
-		const selectedTileServer = tileServers[this.ctrl.tileServer];
+		var selectedTileServer;
+		
+		if (this.ctrl.tileServer === 'ESRI') {
+			this.previousZoom = this.map.getZoom();
+			if (this.map.getZoom() >= 7) {
+				selectedTileServer = tileServers['Esri NatGeo'];
+			}
+			else {
+				selectedTileServer = tileServers['Esri WorldPhysical'];
+			}
+		} 
+		else {
+			 selectedTileServer = tileServers[this.ctrl.tileServer];
+		}
 		this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
             maxZoom: 18,
             subdomains: selectedTileServer.subdomains,
@@ -92,7 +105,15 @@ export default class PhasorMap {
         }).addTo(this.map);
 
         this.Controlledlayer = L.control.layers(null).addTo(this.map);
-        this.map.on("zoomend", () => {
+		this.map.on("zoomend", () => {
+			if (this.map.getZoom() < 7.0 && this.previousZoom  >= 7.0)
+			{
+				this.updateBaseLayer();
+			}
+			if (this.map.getZoom() >= 7.0 && this.previousZoom < 7.0) {
+				this.updateBaseLayer();
+			}
+		this.previousZoom = this.map.getZoom();
             this.drawFeatures();
         });
     }
@@ -112,7 +133,6 @@ export default class PhasorMap {
 						this.staticSeperateLayer.push(L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
 							style: function (feature) {
 								let result = {};
-
 								if (feature.properties.stroke) {
 									result["color"] = feature.properties.stroke;
 									result["stroke"] = true;
@@ -121,13 +141,17 @@ export default class PhasorMap {
 									result["weight"] = feature.properties.weight;
 									result["stroke"] = true;
 								}
-								if (feature.properties.fillcolor) {
-									result["fillColor"] = feature.properties.fillcolor;
+								if (feature.properties.fillColor) {
+									result["fillColor"] = feature.properties.fillColor;
 									result["fill"] = true;
 								}
-								if (feature.properties.fillopacity) {
-									result["fillOpacity"] = feature.properties.fillopacity;
+								if (feature.properties.hasOwnProperty('fillOpacity')) {
+									result["fillOpacity"] = feature.properties.fillOpacity;
 									result["fill"] = true;
+
+									if (feature.properties.fillOpacity === 0) {
+										result['fill'] = false;
+									}
 								}
 
 								return result;
@@ -142,21 +166,49 @@ export default class PhasorMap {
 						if (this.switchableLayer[layer.name]) {
 							this.switchableLayer[layer.name].clearLayers();
 							this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
-							console.log(this.ctrl.customlayerData[layer.name].data)
+
 							this.switchableLayer[layer.name].bringToBack();
 						}
 						else {
-							this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data).addTo(this.map);
+							this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
+								style: function (feature) {
+									let result = {};
+
+									if (feature.properties.stroke) {
+										result["color"] = feature.properties.stroke;
+										result["stroke"] = true;
+									}
+									if (feature.properties.weight) {
+										result["weight"] = feature.properties.weight;
+										result["stroke"] = true;
+									}
+									if (feature.properties.fillcolor) {
+										result["fillColor"] = feature.properties.fillcolor;
+										result["fill"] = true;
+									}
+									if (feature.properties.hasOwnProperty('fillOpacity')) {
+										result["fillOpacity"] = feature.properties.fillopacity;
+										result["fill"] = true;
+										if (feature.properties.fillopacity === 0) {
+											result['fill'] = false;
+										}
+									}
+
+									return result;
+
+								}
+							}).addTo(this.map);
 							this.switchableLayer[layer.name].bringToBack();
 						}
 
 					}
 					else if (!layer.usercontrolled && layer.type == "wms") {
-						console.log("static wms layers no yet implemented");
+						console.log("static wms layers not yet implemented");
 					}
 					else if (layer.type == "wms") {
 						console.log("Dynamic wms layers not yet implemented");
 					}
+
 					else if (!layer.usercontrolled && layer.type == "tile") {
 						this.staticSeperateLayer.push(L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
 							reuseTiles: true,
@@ -226,8 +278,23 @@ export default class PhasorMap {
     }
 
 
-    updateBaseLayer() {
-        const selectedTileServer = tileServers[this.ctrl.tileServer];
+	updateBaseLayer() {
+	
+		var selectedTileServer;
+		this.backgroundlayer.remove(this.map);
+
+		if (this.ctrl.tileServer === 'ESRI') {
+			if (this.map.getZoom() >= 7.0) {
+				selectedTileServer = tileServers['Esri NatGeo'];
+			}
+			else {
+				selectedTileServer = tileServers['Esri WorldPhysical'];
+			}
+		}
+		else {
+			selectedTileServer = tileServers[this.ctrl.tileServer];
+		}
+
 		this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
             maxZoom: 18,
             subdomains: selectedTileServer.subdomains,

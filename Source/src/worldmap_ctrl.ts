@@ -109,9 +109,6 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     }
 
 	setMapProvider(contextSrv) {
-		console.log(this.tileServer);
-		console.log(this.panel.mapBackground);
-		console.log("--");
         if (this.panel.mapBackground) {
             this.tileServer = this.panel.mapBackground;
         }
