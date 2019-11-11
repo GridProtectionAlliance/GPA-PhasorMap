@@ -103,8 +103,8 @@ export default class PhasorMap {
 		
 		
 		if (this.ctrl.customlayerData) {
-            this.ctrl.panel.customlayers.forEach(layer => {
-                if (this.ctrl.customlayerData[layer.name]) {
+			this.ctrl.panel.customlayers.forEach(layer => {
+				if (this.ctrl.customlayerData[layer.name]) {
 					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
 						features.push(this.ctrl.customlayerData[layer.name].data);
 
@@ -113,6 +113,7 @@ export default class PhasorMap {
 						if (this.switchableLayer[layer.name]) {
 							this.switchableLayer[layer.name].clearLayers();
 							this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
+							console.log(this.ctrl.customlayerData[layer.name].data)
 							this.switchableLayer[layer.name].bringToBack();
 						}
 						else {
@@ -129,12 +130,12 @@ export default class PhasorMap {
 					}
 					else if (!layer.usercontrolled && layer.type == "tile") {
 						this.staticSeperateLayer.push(L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
-								reuseTiles: true,
-								detectRetina: true,
-								opacity: this.ctrl.customlayerData[layer.name].oppacity,
-							}).addTo(this.map));
+							reuseTiles: true,
+							detectRetina: true,
+							opacity: this.ctrl.customlayerData[layer.name].oppacity,
+						}).addTo(this.map));
 						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
-								
+
 					}
 					else if (layer.type == "tile") {
 
@@ -146,20 +147,33 @@ export default class PhasorMap {
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							});
 							this.switchableLayer[layer.name].bringToBack();
-						}						
+						}
 					}
 
-                }
-            });
+				}
+			});
 
 			if (this.backgroundlayer) {
 				this.backgroundlayer.bringToBack();
 			}
 
-            if (Object.keys(this.switchableLayer).length > 0) {
-                this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
-            }
-            this.Staticlayer.addData(features);
+			if (Object.keys(this.switchableLayer).length > 0) {
+				this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
+			}
+			this.Staticlayer.addData(features, {
+				style: function (feature) {
+					if (feature.type === "FeatureCollection") {
+						return feature.properties.stroke;
+					}
+					else {
+						console.log("Color from individual");
+						return feature.properties.stroke;
+					}
+
+					return { color: "#0000ff" };
+
+				}
+			});
             this.Staticlayer.bringToBack();
         }
     }
