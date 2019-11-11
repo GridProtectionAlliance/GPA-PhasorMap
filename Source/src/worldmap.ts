@@ -36,7 +36,13 @@ export const tileServers = {
 			'&copy; <a href="http://creativecommons.org/licenses/by/3.0"> CC BY 3.0 < /a> ' + 
 			'& copy; < a href="https:/ / www.openstreetmap.org / copyright" > OpenStreetMap < /a>',
 		subdomains: 'abc'
+	},
+	'Esri WorldPhysical': {
+		url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}',
+		attribution: 'Tiles © Esri — Source: US National Park Service',
+		maxZoom: 8
 	}
+
 }
 
 
