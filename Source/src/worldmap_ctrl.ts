@@ -55,7 +55,9 @@ const panelDefaults = {
     mapBackground: "CartoDB Dark",
     popupstring: '{PointTag}',
     customlayers: [],
-    featureType: "circles",
+	featureType: "circles",
+	PDCuse: false,
+	PDCurl:"",
 };
 
 const mapCenters = {
@@ -106,7 +108,10 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
         this.render();
     }
 
-    setMapProvider(contextSrv) {
+	setMapProvider(contextSrv) {
+		console.log(this.tileServer);
+		console.log(this.panel.mapBackground);
+		console.log("--");
         if (this.panel.mapBackground) {
             this.tileServer = this.panel.mapBackground;
         }

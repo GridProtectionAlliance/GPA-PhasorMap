@@ -261,9 +261,16 @@ export default class DataFormatter {
                 locationrequest.push(datarequest);
             });
 
+			let callurl = "";
+			if (this.ctrl.panel.PDCuse) {
+				callurl = this.ctrl.panel.PDCurl + "/api/grafana/GetLocationData";
+			}
+			else {
+				callurl = "../api/grafana/GetLocationData";
+			}
             $.ajax({
                 type: "POST",
-                url: "../api/grafana/GetLocationData",
+				url: callurl,
                 data: JSON.stringify(locationrequest),
                 contentType: "application/json",
                 dataType: "json",
