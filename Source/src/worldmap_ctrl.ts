@@ -206,7 +206,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
 		if (this.panel.locationData === "json endpoint") {
 			this.series = dataList;
-			this.dataFormatter.setjsonEndpoint(data);
+			this.dataFormatter.setjsonendpoint(data);
       }  else if (this.panel.locationData === "OpenHistorian") {
           this.series = dataList;
           this.dataFormatter.setOpenHistorian(data);

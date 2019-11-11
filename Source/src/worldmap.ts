@@ -105,18 +105,26 @@ export default class PhasorMap {
 						
 						this.staticSeperateLayer.push(L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
 							style: function (feature) {
-								if (feature.type === "FeatureCollection") {
-									console.log("Color from feature collection");
-									console.log(feature);
-									//return feature.properties.stroke;
+								let result = {};
+
+								if (feature.properties.stroke) {
+									result["color"] = feature.properties.stroke;
+									result["stroke"] = true;
 								}
-								else {
-									console.log("Color from individual");
-									console.log(feature);
-									//return feature.properties.stroke;
+								if (feature.properties.weight) {
+									result["weight"] = feature.properties.weight;
+									result["stroke"] = true;
+								}
+								if (feature.properties.fillcolor) {
+									result["fillColor"] = feature.properties.fillcolor;
+									result["fill"] = true;
+								}
+								if (feature.properties.fillopacity) {
+									result["fillOpacity"] = feature.properties.fillopacity;
+									result["fill"] = true;
 								}
 
-								return { color: "#ff0000" };
+								return result;
 
 							}
 						}).addTo(this.map));
