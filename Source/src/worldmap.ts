@@ -48,8 +48,6 @@ export default class PhasorMap {
     map: any;
     legend: any;
     featuresLayer: any;
-    //circlesLayer
-    Staticlayer: any;
     Controlledlayer: any;
     switchableLayer: any;
 	staticSeperateLayer: any[];
@@ -87,7 +85,6 @@ export default class PhasorMap {
             attribution: selectedTileServer.attribution,
         }).addTo(this.map);
 
-        this.Staticlayer = L.geoJSON().addTo(this.map);
         this.Controlledlayer = L.control.layers(null).addTo(this.map);
         this.map.on("zoomend", () => {
             this.drawFeatures();
@@ -98,7 +95,6 @@ export default class PhasorMap {
         this.clearStaticLayer();
         this.updateControlledLayer();
 
-        let features: any[] = [];
 		this.staticSeperateLayer = [];
 		
 		
@@ -106,7 +102,26 @@ export default class PhasorMap {
 			this.ctrl.panel.customlayers.forEach(layer => {
 				if (this.ctrl.customlayerData[layer.name]) {
 					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
-						features.push(this.ctrl.customlayerData[layer.name].data);
+						
+						this.staticSeperateLayer.push(L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
+							style: function (feature) {
+								if (feature.type === "FeatureCollection") {
+									console.log("Color from feature collection");
+									console.log(feature);
+									//return feature.properties.stroke;
+								}
+								else {
+									console.log("Color from individual");
+									console.log(feature);
+									//return feature.properties.stroke;
+								}
+
+								return { color: "#ff0000" };
+
+							}
+						}).addTo(this.map));
+
+						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
 
 					}
 					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "geojson") {
@@ -160,31 +175,12 @@ export default class PhasorMap {
 			if (Object.keys(this.switchableLayer).length > 0) {
 				this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
 			}
-			this.Staticlayer.addData(features, {
-				style: function (feature) {
-					if (feature.type === "FeatureCollection") {
-						console.log("Color from feature collection");
-						console.log(feature);
-						//return feature.properties.stroke;
-					}
-					else {
-						console.log("Color from individual");
-						console.log(feature);
-						//return feature.properties.stroke;
-					}
-
-					return { color: "#ff0000" };
-
-				}
-			});
-            this.Staticlayer.bringToBack();
+			
         }
     }
 
 	clearStaticLayer() {
-        this.Staticlayer.clearLayers();
-        this.Staticlayer.remove();
-        this.Staticlayer = L.geoJSON().addTo(this.map);
+        
 
 		this.staticSeperateLayer.forEach(layer => {
 			this.map.removeLayer(layer);
@@ -477,21 +473,14 @@ export default class PhasorMap {
     }
 
     createPopup(circle, locationName, value, point) {
-        const unit = value && value === 1 ? this.ctrl.panel.unitSingular : this.ctrl.panel.unitPlural;
         let label;
 
-        if (this.ctrl.panel.locationData === "OpenHistorian") {
-            //label = ("<a href='../ParentStatus.cshtml?DeviceID=" + deviceId + "'>" + locationName + "</a>").trim();
+       
             label = this.ctrl.panel.popupstring;
             label = label.replace(/{value}/gi, value);
             label = label.replace(/{deviceID}/gi, point.deviceId);
             label = label.replace(/{PointTag}/gi, point.PointTag);
             label = label.replace(/{deviceName}/gi, point.deviceName);
-
-        }
-        else {
-            label = (locationName + ': ' + value + ' ' + (unit || '')).trim();
-        }
 
 
         if (this.ctrl.panel.stickyLabels && this.ctrl.panel.constantLabels) {

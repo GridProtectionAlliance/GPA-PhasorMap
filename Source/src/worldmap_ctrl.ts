@@ -141,23 +141,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
       return;
     }
 
-    if (this.panel.locationData === "jsonp endpoint") {
-      if (!this.panel.jsonpUrl || !this.panel.jsonpCallback) {
-        return;
-      }
-
-      $.ajax({
-        type: "GET",
-        url: this.panel.jsonpUrl + "?callback=?",
-        contentType: "application/json",
-        jsonpCallback: this.panel.jsonpCallback,
-        dataType: "jsonp",
-        success: res => {
-          this.locations = res;
-          this.render();
-        }
-      });
-    } else if (this.panel.locationData === "json endpoint") {
+    if (this.panel.locationData === "json endpoint") {
       if (!this.panel.jsonUrl) {
         return;
       }
@@ -166,22 +150,11 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
         this.locations = res;
         this.render();
       });
-    } else if (this.panel.locationData === "table") {
-      // .. Domap nothing
     } else if (this.panel.locationData === "OpenHistorian") {
         // Added Open Historian Connection
         this.render();
 
-    } else if (
-      this.panel.locationData !== "geohash" &&
-      this.panel.locationData !== "json result"
-    ) {
-      $.getJSON(
-        "public/plugins/grafana-pmumap-panel/data/" +
-          this.panel.locationData +
-          ".json"
-      ).then(this.reloadLocations.bind(this));
-    }
+    } 
   }
 
   reloadLocations(res) {
@@ -231,15 +204,10 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
       const data = [];
 
-      if (this.panel.locationData === "geohash") {
-        this.dataFormatter.setGeohashValues(dataList, data);
-      } else if (this.panel.locationData === "table") {
-        const tableData = dataList.map(DataFormatter.tableHandler.bind(this));
-        this.dataFormatter.setTableValues(tableData, data);
-      } else if (this.panel.locationData === "json result") {
-        this.series = dataList;
-        this.dataFormatter.setJsonValues(data);
-      } else if (this.panel.locationData === "OpenHistorian") {
+		if (this.panel.locationData === "json endpoint") {
+			this.series = dataList;
+			this.dataFormatter.setjsonEndpoint(data);
+      }  else if (this.panel.locationData === "OpenHistorian") {
           this.series = dataList;
           this.dataFormatter.setOpenHistorian(data);
       } else {
@@ -251,11 +219,8 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
         this.updateThresholdData();
         this.updateSecondaryThresholdData();
 
-      if (this.data.length && this.panel.mapCenter === "Last GeoHash") {
-        this.centerOnLastGeoHash();
-      } else {
         this.render();
-      }
+      
     } catch (err) {
       appEvents.emit('alert-error', ['Data error', err.toString()])
     }
