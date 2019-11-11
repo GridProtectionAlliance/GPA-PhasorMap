@@ -163,14 +163,17 @@ export default class PhasorMap {
 			this.Staticlayer.addData(features, {
 				style: function (feature) {
 					if (feature.type === "FeatureCollection") {
-						return feature.properties.stroke;
+						console.log("Color from feature collection");
+						console.log(feature);
+						//return feature.properties.stroke;
 					}
 					else {
 						console.log("Color from individual");
-						return feature.properties.stroke;
+						console.log(feature);
+						//return feature.properties.stroke;
 					}
 
-					return { color: "#0000ff" };
+					return { color: "#ff0000" };
 
 				}
 			});
