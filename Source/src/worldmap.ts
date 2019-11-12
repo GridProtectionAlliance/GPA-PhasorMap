@@ -203,16 +203,31 @@ export default class PhasorMap {
 
 					}
 					else if (!layer.usercontrolled && layer.type == "wms") {
-						this.staticSeperateLayer.push(L.wms(this.ctrl.customlayerData[layer.name].link, {
+						//console.log(this.ctrl.customlayerData[layer.name].link);
+						this.staticSeperateLayer.push(L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
 							transparent: true,
-							layers: this.ctrl.customlayerData[layer.name].layers,
+							layers: this.ctrl.customlayerData[layer.name].layer,
+							format: 'image/png',
 							opacity: this.ctrl.customlayerData[layer.name].oppacity,
 						}).addTo(this.map));
 
-						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
+						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToFront();
 					}
 					else if (layer.type == "wms") {
-						console.log("Dynamic wms layers not yet implemented");
+
+						if (!this.switchableLayer[layer.name]) {
+
+							this.switchableLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
+								transparent: true,
+								layers: this.ctrl.customlayerData[layer.name].layer,
+								format: 'image/png',
+								opacity: this.ctrl.customlayerData[layer.name].oppacity,
+							}).addTo(this.map);
+						
+							this.switchableLayer[layer.name].bringToBack();
+						}
+
+
 					}
 
 					else if (!layer.usercontrolled && layer.type == "tile") {

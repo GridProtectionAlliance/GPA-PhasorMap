@@ -388,7 +388,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 					);
 			}
 			else if (layer.link && layer.type == "wms") {
-				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload, oppacity: parseFloat(layer.opacity) }
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload, oppacity: parseFloat(layer.opacity), layer: layer.layer }
 				layer.forceReload = false;
 			}
 			else if (layer.link && layer.type == "tile") {
@@ -443,7 +443,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
 			}
 			else if (layer.link && layer.dynamic && layer.type == "wms") {
-				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload }
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload, layer: layer.layer}
 			}
         });
 
