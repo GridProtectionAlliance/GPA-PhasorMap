@@ -142,11 +142,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
       if (!this.panel.jsonUrl) {
         return;
       }
-
-      $.getJSON(this.panel.jsonUrl).then(res => {
-        this.locations = res;
         this.render();
-      });
     } else if (this.panel.locationData === "OpenHistorian") {
         // Added Open Historian Connection
         this.render();
@@ -338,7 +334,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     }
 
     AddCustomLayer() {
-        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson", opacity: "1.0", forceReload: false});
+        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson", opacity: "1.0", forceReload: false, layer: "" });
         this.UpdateCustomLayer();
     }
 
@@ -392,7 +388,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 					);
 			}
 			else if (layer.link && layer.type == "wms") {
-				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: false }
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload, oppacity: parseFloat(layer.opacity) }
 				layer.forceReload = false;
 			}
 			else if (layer.link && layer.type == "tile") {
@@ -447,7 +443,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
 			}
 			else if (layer.link && layer.dynamic && layer.type == "wms") {
-				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: false }
+				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload }
 			}
         });
 

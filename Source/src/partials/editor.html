@@ -170,16 +170,20 @@
 			<div class="gf-form">
 				<label class="gf-form-label width-12">Table Query Format</label>
 				<div class="gf-form-select-wrapper max-width-10">
-					<select class="input-small gf-form-input" ng-model="ctrl.panel.customlayers[$index].type" ng-options="t for t in ['geojson','tile']"
+					<select class="input-small gf-form-input" ng-model="ctrl.panel.customlayers[$index].type" ng-options="t for t in ['geojson','tile','wms']"
 							ng-change="ctrl.ChangedlayerData(ctrl.panel.customlayers[$index])"></select>
 				</div>
 			</div>
-			<div class="gf-form" ng-show="ctrl.panel.customlayers[$index].type=='tile'">
+			<div class="gf-form" ng-show="ctrl.panel.customlayers[$index].type !=='geojson'">
 				<label class="gf-form-label width-10">Opacity</label>
 				<input type="text" class="input-small gf-form-input width-10" ng-model="ctrl.panel.customlayers[$index].opacity" ng-change="ctrl.ChangedlayerData(ctrl.panel.customlayers[$index])"
 					   placeholder="1.0" ng-model-onblur />
 			</div>
-
+			<div class="gf-form" ng-show="ctrl.panel.customlayers[$index].type=='wms'">
+				<label class="gf-form-label width-10">Layer</label>
+				<input type="text" class="input-small gf-form-input width-30" ng-model="ctrl.panel.customlayers[$index].layer" ng-change="ctrl.ChangedlayerData(ctrl.panel.customlayers[$index])"
+					   placeholder="" ng-model-onblur />
+			</div>
 			<button class="btn navbar-button" ng-mousedown="ctrl.RemoveCustomLayer($index)">Remove Layer</button>
 		</div>
         <button class="btn navbar-button" ng-mousedown="ctrl.AddCustomLayer()">Add Layer</button>

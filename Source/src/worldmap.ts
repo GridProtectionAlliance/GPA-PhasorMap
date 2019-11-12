@@ -203,7 +203,13 @@ export default class PhasorMap {
 
 					}
 					else if (!layer.usercontrolled && layer.type == "wms") {
-						console.log("static wms layers not yet implemented");
+						this.staticSeperateLayer.push(L.wms(this.ctrl.customlayerData[layer.name].link, {
+							transparent: true,
+							layers: this.ctrl.customlayerData[layer.name].layers,
+							opacity: this.ctrl.customlayerData[layer.name].oppacity,
+						}).addTo(this.map));
+
+						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
 					}
 					else if (layer.type == "wms") {
 						console.log("Dynamic wms layers not yet implemented");
