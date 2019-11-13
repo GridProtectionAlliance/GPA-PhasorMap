@@ -152,21 +152,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     this.locations = res;
     this.refresh();
   }
-
-  showTableGeohashOptions() {
-    return (
-      this.panel.locationData === "table" &&
-      this.panel.tableQueryOptions.queryType === "geohash"
-    );
-  }
-
-  showTableCoordinateOptions() {
-    return (
-      this.panel.locationData === "table" &&
-      this.panel.tableQueryOptions.queryType === "coordinates"
-    );
-  }
-
+	
   onPanelTeardown() {
     if (this.map) {
       this.map.remove();
@@ -181,7 +167,8 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     );
   }
 
-  onDataReceived(dataList) {
+	onDataReceived(dataList) {
+		
     if (!dataList) {
       return;
     }
@@ -392,6 +379,24 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "tile", forceReload: layer.forceReload, oppacity: parseFloat(layer.opacity) }
 				layer.forceReload = false;
 			}
+			else if (layer.link && layer.type == "text") {
+				promisedata.push(
+					$.getJSON(layerlink).then(res => {
+					if (promiseCtrl.customlayerData[layer.name]) {
+
+						promiseCtrl.customlayerData[layer.name].data = res;
+						promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+						promiseCtrl.customlayerData[layer.name].forceReload = true;
+						layer.forceReload = false;
+					}
+					else {
+						promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "text", forceReload: layer.forceReload };
+						layer.forceReload = false;
+					}
+				}).catch(e => {
+				})
+					);
+			}
 			else { console.log(layer);}
         });
 
@@ -441,6 +446,25 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 			}
 			else if (layer.link && layer.dynamic && layer.type == "wms") {
 				this.customlayerData[layer.name] = { usercontrolled: layer.usercontrolled, link: layerlink, type: "wms", forceReload: layer.forceReload, layer: layer.layer}
+			}
+			else if (layer.link && layer.dynamic && layer.type == "text") {
+				promisedata.push(
+					$.getJSON(layerlink).then(res => {
+						if (promiseCtrl.customlayerData[layer.name]) {
+
+							promiseCtrl.customlayerData[layer.name].data = res;
+							promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
+							promiseCtrl.customlayerData[layer.name].forceReload = true;
+							layer.forceReload = false;
+						}
+						else {
+							promiseCtrl.customlayerData[layer.name] = { data: res, usercontrolled: layer.usercontrolled, type: "text", forceReload: layer.forceReload };
+							layer.forceReload = false;
+						}
+					}).catch(e => {
+					})
+				);
+
 			}
         });
 

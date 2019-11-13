@@ -129,7 +129,7 @@ export default class PhasorMap {
 			this.ctrl.panel.customlayers.forEach(layer => {
 				if (this.ctrl.customlayerData[layer.name]) {
 					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
-						
+
 						this.staticSeperateLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
 							style: function (feature) {
 								let result = {};
@@ -145,14 +145,13 @@ export default class PhasorMap {
 									result["fillColor"] = feature.properties.fillColor;
 									result["fill"] = true;
 								}
-								
+
 								if (feature.properties.hasOwnProperty('fillOpacity')) {
 									result["fillOpacity"] = feature.properties.fillOpacity;
 									result["fill"] = true;
 
 									if (feature.properties.fillOpacity === 0) {
 										result['fill'] = false;
-										console.log("no fill")
 									}
 								}
 
@@ -201,7 +200,7 @@ export default class PhasorMap {
 
 					}
 					else if (!layer.usercontrolled && layer.type == "wms") {
-						
+
 						this.staticSeperateLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
 							transparent: true,
 							layers: this.ctrl.customlayerData[layer.name].layer,
@@ -220,8 +219,8 @@ export default class PhasorMap {
 								format: 'image/png',
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							}).addTo(this.map);
-						
-							
+
+
 						}
 
 
@@ -244,9 +243,22 @@ export default class PhasorMap {
 								detectRetina: true,
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							});
-						
+
 						}
 					}
+					else if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "text") {
+						this.staticSeperateLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+					}
+					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "text") {
+						if (this.switchableLayer[layer.name]) {
+							this.switchableLayer[layer.name].clearLayers();
+							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+						}
+						else {
+							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+						}
+					}
+					else { console.log(this.ctrl.customlayerData[layer.name])}
 
 				}
 			});
@@ -263,6 +275,39 @@ export default class PhasorMap {
         }
     }
 
+	CreateTextLayer(data) {
+		let result: any[] = [];
+
+		data.forEach(item => {
+			let txt = item.Text;
+
+		while (txt.search(/\[.*\]/g) !== -1) {
+			let tag = txt.match(/\[([^\]]*)\]/);
+			let pointtag = tag[1];
+			let str = '[' + pointtag + ']'
+			
+			let index = _.find(this.ctrl.data, item => {
+				return item.key === pointtag;
+			});
+
+			if (index && index.hasOwnProperty('value')) {
+				txt = txt.replace(str, index.value);
+			}
+			else {
+				txt = txt.replace(str, '');
+			}
+			}
+				
+			
+			let myIcon = L.divIcon({ html: txt });
+			let marker = L.marker([item.Latitude, item.Longitude], { icon: myIcon });
+
+			result.push(marker);
+		});
+
+		return result;
+	}
+
 	SortLayerZindex() {
 		//Sort all the layers by z-index (lower = lower on the map....)
 
@@ -273,15 +318,20 @@ export default class PhasorMap {
 			let index = _.find(this.ctrl.panel.customlayers, item => {
 				return item.name === key;
 			});
-			
-			keystoSort.push({ name: key, zIndex: index.zIndex });
+			if (index.type === 'text') { }
+			else {
+				keystoSort.push({ name: key, zIndex: index.zIndex });
+			}
 		}
 		
 		for (let key in this.staticSeperateLayer) {
 			let index = _.find(this.ctrl.panel.customlayers, item => {
 				return item.name === key;
 			});
-			keystoSort.push({ name: key, zIndex: index.zIndex });
+			if (index.type === 'text') { }
+			else {
+				keystoSort.push({ name: key, zIndex: index.zIndex });
+			}
 		}
 
 		keystoSort.sort(this.sortFunc);
@@ -303,10 +353,7 @@ export default class PhasorMap {
 
 		}
 
-		//Data Layer on Top
-		if (this.featuresLayer) {
-			this.featuresLayer.bringToFront();
-		}
+		// Data Layer will always be on top
 	}
 
 	sortFunc(a, b) {
