@@ -54,7 +54,7 @@ export default class PhasorMap {
     featuresLayer: any;
     Controlledlayer: any;
     switchableLayer: any;
-	staticSeperateLayer: any[];
+	staticSeperateLayer: any;
 	backgroundlayer: any;
 	previousZoom: number;
 
@@ -64,7 +64,7 @@ export default class PhasorMap {
         this.circles = [];
         this.arrows = [];
 		this.switchableLayer = {};
-		this.staticSeperateLayer = [];
+		this.staticSeperateLayer = {};
 		this.previousZoom = 0;
     }
 
@@ -122,7 +122,7 @@ export default class PhasorMap {
         this.clearStaticLayer();
         this.updateControlledLayer();
 
-		this.staticSeperateLayer = [];
+		this.staticSeperateLayer = {};
 		
 		
 		if (this.ctrl.customlayerData) {
@@ -130,7 +130,7 @@ export default class PhasorMap {
 				if (this.ctrl.customlayerData[layer.name]) {
 					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
 						
-						this.staticSeperateLayer.push(L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
+						this.staticSeperateLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
 							style: function (feature) {
 								let result = {};
 								if (feature.properties.stroke) {
@@ -145,29 +145,27 @@ export default class PhasorMap {
 									result["fillColor"] = feature.properties.fillColor;
 									result["fill"] = true;
 								}
+								
 								if (feature.properties.hasOwnProperty('fillOpacity')) {
 									result["fillOpacity"] = feature.properties.fillOpacity;
 									result["fill"] = true;
 
 									if (feature.properties.fillOpacity === 0) {
 										result['fill'] = false;
+										console.log("no fill")
 									}
 								}
 
 								return result;
 
 							}
-						}).addTo(this.map));
-
-						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
+						}).addTo(this.map);
 
 					}
 					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "geojson") {
 						if (this.switchableLayer[layer.name]) {
 							this.switchableLayer[layer.name].clearLayers();
 							this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
-
-							this.switchableLayer[layer.name].bringToBack();
 						}
 						else {
 							this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
@@ -187,9 +185,9 @@ export default class PhasorMap {
 										result["fill"] = true;
 									}
 									if (feature.properties.hasOwnProperty('fillOpacity')) {
-										result["fillOpacity"] = feature.properties.fillopacity;
+										result["fillOpacity"] = feature.properties.fillOpacity;
 										result["fill"] = true;
-										if (feature.properties.fillopacity === 0) {
+										if (feature.properties.fillOpacity === 0) {
 											result['fill'] = false;
 										}
 									}
@@ -198,20 +196,19 @@ export default class PhasorMap {
 
 								}
 							}).addTo(this.map);
-							this.switchableLayer[layer.name].bringToBack();
+
 						}
 
 					}
 					else if (!layer.usercontrolled && layer.type == "wms") {
-						//console.log(this.ctrl.customlayerData[layer.name].link);
-						this.staticSeperateLayer.push(L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
+						
+						this.staticSeperateLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
 							transparent: true,
 							layers: this.ctrl.customlayerData[layer.name].layer,
 							format: 'image/png',
 							opacity: this.ctrl.customlayerData[layer.name].oppacity,
-						}).addTo(this.map));
+						}).addTo(this.map);
 
-						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToFront();
 					}
 					else if (layer.type == "wms") {
 
@@ -224,19 +221,18 @@ export default class PhasorMap {
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							}).addTo(this.map);
 						
-							this.switchableLayer[layer.name].bringToBack();
+							
 						}
 
 
 					}
 
 					else if (!layer.usercontrolled && layer.type == "tile") {
-						this.staticSeperateLayer.push(L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
+						this.staticSeperateLayer[layer.name] = L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
 							reuseTiles: true,
 							detectRetina: true,
 							opacity: this.ctrl.customlayerData[layer.name].oppacity,
-						}).addTo(this.map));
-						this.staticSeperateLayer[this.staticSeperateLayer.length - 1].bringToBack();
+						}).addTo(this.map);
 
 					}
 					else if (layer.type == "tile") {
@@ -248,30 +244,81 @@ export default class PhasorMap {
 								detectRetina: true,
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
 							});
-							this.switchableLayer[layer.name].bringToBack();
+						
 						}
 					}
 
 				}
 			});
 
-			if (this.backgroundlayer) {
-				this.backgroundlayer.bringToBack();
-			}
+		
 
 			if (Object.keys(this.switchableLayer).length > 0) {
 				this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
 			}
+
+			this.SortLayerZindex();
+
 			
         }
     }
 
+	SortLayerZindex() {
+		//Sort all the layers by z-index (lower = lower on the map....)
+
+		let keystoSort: any[] = [];
+		
+
+		for (let key in this.switchableLayer) {
+			let index = _.find(this.ctrl.panel.customlayers, item => {
+				return item.name === key;
+			});
+			
+			keystoSort.push({ name: key, zIndex: index.zIndex });
+		}
+		
+		for (let key in this.staticSeperateLayer) {
+			let index = _.find(this.ctrl.panel.customlayers, item => {
+				return item.name === key;
+			});
+			keystoSort.push({ name: key, zIndex: index.zIndex });
+		}
+
+		keystoSort.sort(this.sortFunc);
+
+		//Base Layer on Bottom
+		if (this.backgroundlayer) {
+			this.backgroundlayer.bringToFront();
+		}
+
+		//Map Layers accoring to zIndex
+		let i;
+		for (i = 0; i < keystoSort.length; i++) {
+			if (this.staticSeperateLayer[keystoSort[i].name]) {
+				this.staticSeperateLayer[keystoSort[i].name].bringToFront();
+			}
+			else {
+				this.switchableLayer[keystoSort[i].name].bringToFront();
+			}
+
+		}
+
+		//Data Layer on Top
+		if (this.featuresLayer) {
+			this.featuresLayer.bringToFront();
+		}
+	}
+
+	sortFunc(a, b) {
+		 
+		return parseInt(a.zIndex) - parseInt(b.zIndex);
+	}
+
 	clearStaticLayer() {
         
-
-		this.staticSeperateLayer.forEach(layer => {
-			this.map.removeLayer(layer);
-		});
+		for (let key in this.staticSeperateLayer) {
+			this.map.removeLayer(this.staticSeperateLayer[key]);
+		}
 
         this.Controlledlayer.remove();
 

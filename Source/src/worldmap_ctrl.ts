@@ -56,8 +56,6 @@ const panelDefaults = {
     popupstring: '{PointTag}',
     customlayers: [],
 	featureType: "circles",
-	PDCuse: false,
-	PDCurl:"",
 };
 
 const mapCenters = {
@@ -222,8 +220,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
   centerOnLastGeoHash() {
     const last: any = _.last(this.data);
     mapCenters[this.panel.mapCenter].mapCenterLatitude = last.locationLatitude;
-    mapCenters[this.panel.mapCenter].mapCenterLongitude =
-      last.locationLongitude;
+    mapCenters[this.panel.mapCenter].mapCenterLongitude = last.locationLongitude;
     this.setNewMapCenter();
   }
 
@@ -334,7 +331,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     }
 
     AddCustomLayer() {
-        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson", opacity: "1.0", forceReload: false, layer: "" });
+        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson", opacity: "1.0", forceReload: false, layer: "", zIndex: 0 });
         this.UpdateCustomLayer();
     }
 
