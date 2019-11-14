@@ -106,6 +106,7 @@ export default class PhasorMap {
 		//create new pane for overlays
 		this.map.createPane('overlays');
 		this.map.getPane('overlays').style.zIndex = 450;
+		this.map.getPane('overlays').style.pointerEvents = 'none';
     }
 
     updateStaticLayer() {
