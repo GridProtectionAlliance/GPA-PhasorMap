@@ -40,6 +40,7 @@ export default class PhasorMap {
             center: mapCenter,
 			zoom: parseFloat(this.ctrl.panel.initialZoom) || 1,
 			zoomSnap: parseFloat(this.ctrl.panel.zoomSteps) || 1,
+			zoomDelta: parseFloat(this.ctrl.panel.zoomSteps) || 1
         });
 
         this.setMouseWheelZoom();
@@ -81,7 +82,9 @@ export default class PhasorMap {
 			}).addTo(this.map);
 		}
 
-        this.Controlledlayer = L.control.layers(null).addTo(this.map);
+		this.Controlledlayer = L.control.layers(null).addTo(this.map);
+
+		//This needs to be more general .... see later...
 		this.map.on("zoomend", () => {
 			if (this.map.getZoom() < 7.0 && this.previousZoom  >= 7.0)
 			{
@@ -91,7 +94,9 @@ export default class PhasorMap {
 				this.updateBaseLayer();
 			}
 		this.previousZoom = this.map.getZoom();
-            this.drawFeatures();
+			this.drawFeatures();
+			console.log(this.previousZoom)
+			this.updateStaticLayer();
 		});
 
 		this.map.on('baselayerchange', function (e) {
@@ -114,48 +119,10 @@ export default class PhasorMap {
 			this.ctrl.panel.customlayers.forEach(layer => {
 				if (this.ctrl.customlayerData[layer.name]) {
 					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
-
-						this.staticSeperateLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
-							style: function (feature) {
-								let result = {};
-								if (feature.properties.stroke) {
-									result["color"] = feature.properties.stroke;
-									result["stroke"] = true;
-								}
-								if (feature.properties.weight) {
-									result["weight"] = feature.properties.weight;
-									result["stroke"] = true;
-								}
-								if (feature.properties.fillColor) {
-									result["fillColor"] = feature.properties.fillColor;
-									result["fill"] = true;
-								}
-
-								if (feature.properties.hasOwnProperty('fillOpacity')) {
-									result["fillOpacity"] = feature.properties.fillOpacity;
-									result["fill"] = true;
-
-									if (feature.properties.fillOpacity === 0) {
-										result['fill'] = false;
-									}
-								}
-
-								return result;
-
-							}, pane: 'overlays'
-						}).addTo(this.map);
-
-					}
-					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "geojson") {
-						if (this.switchableLayer[layer.name]) {
-							this.switchableLayer[layer.name].clearLayers();
-							this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
-						}
-						else {
-							this.switchableLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+							this.staticSeperateLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
 								style: function (feature) {
 									let result = {};
-
 									if (feature.properties.stroke) {
 										result["color"] = feature.properties.stroke;
 										result["stroke"] = true;
@@ -164,13 +131,15 @@ export default class PhasorMap {
 										result["weight"] = feature.properties.weight;
 										result["stroke"] = true;
 									}
-									if (feature.properties.fillcolor) {
-										result["fillColor"] = feature.properties.fillcolor;
+									if (feature.properties.fillColor) {
+										result["fillColor"] = feature.properties.fillColor;
 										result["fill"] = true;
 									}
+
 									if (feature.properties.hasOwnProperty('fillOpacity')) {
 										result["fillOpacity"] = feature.properties.fillOpacity;
 										result["fill"] = true;
+
 										if (feature.properties.fillOpacity === 0) {
 											result['fill'] = false;
 										}
@@ -180,20 +149,81 @@ export default class PhasorMap {
 
 								}, pane: 'overlays'
 							}).addTo(this.map);
+						}
 
+					}
+					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "geojson") {
+						if (this.switchableLayer[layer.name]) {
+							this.switchableLayer[layer.name].clearLayers();
+							if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+								this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
+							}
+						}
+						else {
+							//this is a single point to make sure the layer still gets on the control
+							let cleanData = {
+								"type": "FeatureCollection",
+								"features": [
+									{
+										"type": "Feature",
+										"properties": {},
+										"geometry": {
+											"type": "Point",
+											"coordinates": [
+												14.0625,
+												77.157162522661
+											]
+										}
+									}
+								]
+							};
+
+							if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+								cleanData = this.ctrl.customlayerData[layer.name].data;
+							}
+
+							this.switchableLayer[layer.name] = L.geoJSON(cleanData, {
+									style: function (feature) {
+										let result = {};
+
+										if (feature.properties.stroke) {
+											result["color"] = feature.properties.stroke;
+											result["stroke"] = true;
+										}
+										if (feature.properties.weight) {
+											result["weight"] = feature.properties.weight;
+											result["stroke"] = true;
+										}
+										if (feature.properties.fillcolor) {
+											result["fillColor"] = feature.properties.fillcolor;
+											result["fill"] = true;
+										}
+										if (feature.properties.hasOwnProperty('fillOpacity')) {
+											result["fillOpacity"] = feature.properties.fillOpacity;
+											result["fill"] = true;
+											if (feature.properties.fillOpacity === 0) {
+												result['fill'] = false;
+											}
+										}
+
+										return result;
+
+									}, pane: 'overlays'
+								}).addTo(this.map);
 						}
 
 					}
 					else if (!layer.usercontrolled && layer.type == "wms") {
 
-						this.staticSeperateLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
-							transparent: true,
-							layers: this.ctrl.customlayerData[layer.name].layer,
-							format: 'image/png',
-							opacity: this.ctrl.customlayerData[layer.name].oppacity,
-							pane: 'overlays'
-						}).addTo(this.map);
-
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+							this.staticSeperateLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
+								transparent: true,
+								layers: this.ctrl.customlayerData[layer.name].layer,
+								format: 'image/png',
+								opacity: this.ctrl.customlayerData[layer.name].oppacity,
+								pane: 'overlays'
+							}).addTo(this.map);
+						}
 					}
 					else if (layer.type == "wms") {
 
@@ -209,17 +239,24 @@ export default class PhasorMap {
 
 
 						}
-
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+							this.switchableLayer[layer.name].setOpacity(this.ctrl.customlayerData[layer.name].oppacity);
+						} else {
+							this.switchableLayer[layer.name].setOpacity(0.0);
+						}
+						
 
 					}
 
 					else if (!layer.usercontrolled && layer.type == "tile") {
-						this.staticSeperateLayer[layer.name] = L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
-							reuseTiles: true,
-							detectRetina: true,
-							opacity: this.ctrl.customlayerData[layer.name].oppacity,
-							pane: 'overlays'
-						}).addTo(this.map);
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+							this.staticSeperateLayer[layer.name] = L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
+								reuseTiles: true,
+								detectRetina: true,
+								opacity: this.ctrl.customlayerData[layer.name].oppacity,
+								pane: 'overlays'
+							}).addTo(this.map);
+						}
 
 					}
 					else if (layer.type == "tile") {
@@ -234,18 +271,28 @@ export default class PhasorMap {
 							});
 
 						}
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+							this.switchableLayer[layer.name].setOpacity(this.ctrl.customlayerData[layer.name].oppacity);
+						} else {
+							this.switchableLayer[layer.name].setOpacity(0.0);
+						} 
 					}
 					else if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "text") {
-						this.staticSeperateLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+							this.staticSeperateLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+						}
 					}
 					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "text") {
 						if (this.switchableLayer[layer.name]) {
 							this.switchableLayer[layer.name].clearLayers();
+						}
+						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
 							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
 						}
 						else {
-							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer([{ "Text": "", "Longitude": -84.899707, "Latitude": 34.759979}]));
 						}
+						
 					}
 					else { console.log(this.ctrl.customlayerData[layer.name])}
 
@@ -289,15 +336,12 @@ export default class PhasorMap {
 			
 			if (Object.keys(this.switchableLayer).length > 0 && (!this.ctrl.panel.multiMaps || Object.keys(this.ControlledMaps).length == 1)) {
 				this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
-				console.log("Case 1")
 			}
 			else if (Object.keys(this.switchableLayer).length == 0 && this.ctrl.panel.multiMaps && Object.keys(this.ControlledMaps).length > 1) {
 				this.Controlledlayer = L.control.layers(this.ControlledMaps, null, { collapsed: false }).addTo(this.map);
-				console.log("Case 2")
 			}
 			else if (this.ctrl.panel.multiMaps && Object.keys(this.ControlledMaps).length > 1) {
 				this.Controlledlayer = L.control.layers(this.ControlledMaps, this.switchableLayer, { collapsed: false }).addTo(this.map);
-				console.log("Case 3")
 			}
 
 			this.SortLayerZindex();
@@ -478,6 +522,8 @@ export default class PhasorMap {
 				attribution: selectedTileServer.attribution,
 			}).addTo(this.map);
 		}
+
+		this.updateStaticLayer();
     }
 
     createLegend() {

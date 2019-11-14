@@ -70,7 +70,7 @@ const mapCenters = {
   "Last GeoHash": { mapCenterLatitude: 0, mapCenterLongitude: 0 }
 };
 
-const mapOption = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap', 'ESRI'];
+const mapOption = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap', 'ESRI','Esri WorldShaded'];
 
 export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	static templateUrl = "partials/module.html";
@@ -323,7 +323,18 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     }
 
     AddCustomLayer() {
-        this.panel.customlayers.push({ name: "Custom Layer " + this.panel.customlayers.length, link: "", dynamic: true, usercontrolled: false, type: "geojson", opacity: "1.0", forceReload: false, layer: "", zIndex: 0 });
+		this.panel.customlayers.push({
+			name: "Custom Layer " + this.panel.customlayers.length, link: "",
+			dynamic: true,
+			usercontrolled: false,
+			type: "geojson",
+			opacity: "1.0",
+			forceReload: false,
+			layer: "",
+			zIndex: 0,
+			minZoom: 0,
+			maxZoom: 18
+		});
         this.UpdateCustomLayer();
     }
 
