@@ -38,7 +38,8 @@ export default class PhasorMap {
             worldCopyJump: true,
             preferCanvas: true,
             center: mapCenter,
-            zoom: parseFloat(this.ctrl.panel.initialZoom) || 1,
+			zoom: parseFloat(this.ctrl.panel.initialZoom) || 1,
+			zoomSnap: parseFloat(this.ctrl.panel.zoomSteps) || 1,
         });
 
         this.setMouseWheelZoom();
@@ -823,7 +824,7 @@ export default class PhasorMap {
     }
 
     setZoom(zoomFactor) {
-        this.map.setZoom(parseFloat(zoomFactor));
+		this.map.setZoom(parseFloat(zoomFactor));
     }
 
     remove() {

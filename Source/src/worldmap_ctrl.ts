@@ -57,7 +57,8 @@ const panelDefaults = {
 	customlayers: [],
 	featureType: "circles",
 	multiMaps: false,
-	selectableMaps: [{name: "default", map: 'CartoDB Positron', forceReload: false}],
+	selectableMaps: [{ name: "default", map: 'CartoDB Positron', forceReload: false }],
+	zoomSteps: 1,
 };
 
 const mapCenters = {
@@ -241,7 +242,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
   }
 
   setZoom() {
-    this.map.setZoom(this.panel.initialZoom || 1);
+	  this.map.setZoom(this.panel.initialZoom || 1);
   }
 
   toggleLegend() {
