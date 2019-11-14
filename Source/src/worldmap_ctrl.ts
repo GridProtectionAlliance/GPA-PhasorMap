@@ -11,51 +11,53 @@ import PhasorMap from "./worldmap";
 import moment from 'moment';
 
 const panelDefaults = {
-  maxDataPoints: 1,
-  mapCenter: "(0°, 0°)",
-  mapCenterLatitude: 0,
-  mapCenterLongitude: 0,
-  initialZoom: 1,
-  valueName: "total",
-  circleMinSize: 2,
-  circleMaxSize: 30,
-  locationData: "countries",
-  thresholds: "0,10",
-  colors: [
-    "rgba(245, 54, 54, 0.9)",
-    "rgba(237, 129, 40, 0.89)",
-    "rgba(50, 172, 45, 0.97)"
-    ],
+	maxDataPoints: 1,
+	mapCenter: "(0°, 0°)",
+	mapCenterLatitude: 0,
+	mapCenterLongitude: 0,
+	initialZoom: 1,
+	valueName: "total",
+	circleMinSize: 2,
+	circleMaxSize: 30,
+	locationData: "countries",
+	thresholds: "0,10",
+	colors: [
+		"rgba(245, 54, 54, 0.9)",
+		"rgba(237, 129, 40, 0.89)",
+		"rgba(50, 172, 45, 0.97)"
+	],
 
-    secondarythresholds: "0,10",
-    secondarycolors: [
-        "rgba(245, 54, 54, 0.9)",
-        "rgba(237, 129, 40, 0.89)",
-        "rgba(50, 172, 45, 0.97)"
-    ],
+	secondarythresholds: "0,10",
+	secondarycolors: [
+		"rgba(245, 54, 54, 0.9)",
+		"rgba(237, 129, 40, 0.89)",
+		"rgba(50, 172, 45, 0.97)"
+	],
 
 
-  unitSingle: "",
-  unitPlural: "",
-  showLegend: true,
-  mouseWheelZoom: false,
-  esMetric: "Count",
-  decimals: 0,
-  hideEmpty: false,
-  hideZero: false,
-    stickyLabels: false,
-    constantLabels: false,
-  tableQueryOptions: {
-    queryType: "geohash",
-    geohashField: "geohash",
-    latitudeField: "latitude",
-    longitudeField: "longitude",
-    metricField: "metric"
-    },
-    mapBackground: "CartoDB Dark",
-    popupstring: '{PointTag}',
-    customlayers: [],
+	unitSingle: "",
+	unitPlural: "",
+	showLegend: true,
+	mouseWheelZoom: false,
+	esMetric: "Count",
+	decimals: 0,
+	hideEmpty: false,
+	hideZero: false,
+	stickyLabels: false,
+	constantLabels: false,
+	tableQueryOptions: {
+		queryType: "geohash",
+		geohashField: "geohash",
+		latitudeField: "latitude",
+		longitudeField: "longitude",
+		metricField: "metric"
+	},
+	mapBackground: "CartoDB Dark",
+	popupstring: '{PointTag}',
+	customlayers: [],
 	featureType: "circles",
+	multiMaps: false,
+	selectableMaps: [{name: "default", map: 'CartoDB Positron', forceReload: false}],
 };
 
 const mapCenters = {
@@ -67,9 +69,11 @@ const mapCenters = {
   "Last GeoHash": { mapCenterLatitude: 0, mapCenterLongitude: 0 }
 };
 
-export default class PhasorMapCtrl extends MetricsPanelCtrl {
-  static templateUrl = "partials/module.html";
+const mapOption = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap', 'ESRI'];
 
+export default class PhasorMapCtrl extends MetricsPanelCtrl {
+	static templateUrl = "partials/module.html";
+	mapOptions = mapOption;
   dataFormatter: DataFormatter;
   locations: any;
   staticLayerContent: any;
@@ -477,6 +481,24 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
     }
 
+	ChangedMapOptions(map) {
+		// This is counterintuitive But Custom Layer will update the controll so this is important
+		map.forceReload = true;
+		this.map.updateStaticLayer();
+	}
+
+	RemovedMapOption(index) {
+		this.panel.selectableMaps.splice(index, 1);
+		this.map.updateStaticLayer();
+	}
+
+	AddedMapOption() {
+		this.panel.selectableMaps.push({ name: "Map " + this.panel.selectableMaps.length, map: this.mapOptions[0], forceReload: false });
+		this.map.updateStaticLayer();
+		console.log(this.panel.selectableMaps)
+	}
+
+	
   link(scope, elem, attrs, ctrl) {
     let firstRender = true;
 

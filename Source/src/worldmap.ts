@@ -1,48 +1,7 @@
 import * as _ from 'lodash';
 import * as L from './libs/leaflet';
 import PhasorMapCtrl from './worldmap_ctrl';
-
-export const tileServers = {
-  'CartoDB Positron': {
-    url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
-    attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-      '&copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    subdomains: 'abcd',
-  },
-  'CartoDB Dark': {
-    url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
-    attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-      '&copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
-    subdomains: 'abcd',
-    },
-    'OpenStreetMap Mapnik': {
-        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        subdomains: 'abcd',
-    },
-    'Open Topo Map': {
-        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-            '&copy; <a href="http://viewfinderpanoramas.org"> SRTM < /a>' +
-            '&copy; < a href="https://opentopomap.org"> OpenTopoMap < /a>' +
-            '&copy; (<a href="https://creativecommons.org/licenses/by-sa/3.0/"> CC - BY - SA < /a>)',
-        subdomains: 'abc',
-	},
-	'Esri WorldPhysical': {
-		url: 'https://se{s}ver.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}',
-		attribution: 'Tiles &copy Esri — Source: US National Park Service',
-		subdomains: 'r'
-	},
-	'Esri NatGeo': {
-		url: 'https://se{s}ver.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}',
-		attribution: 'Tiles &copy Esri —  National Geographic, Esri, DeLorme, NAVTEQ, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, iPC',
-		subdomains: 'r'
-	}
-
-}
-
+import tileServers from './Maps';
 
 export default class PhasorMap {
 	ctrl: PhasorMapCtrl;
@@ -57,6 +16,7 @@ export default class PhasorMap {
 	staticSeperateLayer: any;
 	backgroundlayer: any;
 	previousZoom: number;
+	ControlledMaps: any;
 
     constructor(ctrl, mapContainer) {
         this.ctrl = ctrl;
@@ -66,6 +26,7 @@ export default class PhasorMap {
 		this.switchableLayer = {};
 		this.staticSeperateLayer = {};
 		this.previousZoom = 0;
+		this.ControlledMaps = {};
     }
 
     createMap() {
@@ -83,26 +44,41 @@ export default class PhasorMap {
         this.setMouseWheelZoom();
 
 		var selectedTileServer;
-		
-		if (this.ctrl.tileServer === 'ESRI') {
-			this.previousZoom = this.map.getZoom();
-			if (this.map.getZoom() >= 7) {
-				selectedTileServer = tileServers['Esri NatGeo'];
+
+		if (this.ctrl.panel.multiMaps) {
+			selectedTileServer = tileServers[this.ctrl.panel.selectableMaps[0].map];
+			this.ControlledMaps[this.ctrl.panel.selectableMaps[0].name] = (<any>window).L.tileLayer(selectedTileServer.url, {
+				maxZoom: 18,
+				subdomains: selectedTileServer.subdomains,
+				reuseTiles: true,
+				detectRetina: true,
+				attribution: selectedTileServer.attribution,
+			}).addTo(this.map);
+
+			this.backgroundlayer = this.ControlledMaps[this.ctrl.panel.selectableMaps[0].name];
+
+		}
+		else {
+			if (this.ctrl.tileServer === 'ESRI') {
+				this.previousZoom = this.map.getZoom();
+				if (this.map.getZoom() >= 7) {
+					selectedTileServer = tileServers['Esri NatGeo'];
+				}
+				else {
+					selectedTileServer = tileServers['Esri WorldPhysical'];
+				}
 			}
 			else {
-				selectedTileServer = tileServers['Esri WorldPhysical'];
+				selectedTileServer = tileServers[this.ctrl.tileServer];
 			}
-		} 
-		else {
-			 selectedTileServer = tileServers[this.ctrl.tileServer];
+			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
+				maxZoom: 18,
+				subdomains: selectedTileServer.subdomains,
+				reuseTiles: true,
+				detectRetina: true,
+				attribution: selectedTileServer.attribution,
+			}).addTo(this.map);
 		}
-		this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
-            maxZoom: 18,
-            subdomains: selectedTileServer.subdomains,
-            reuseTiles: true,
-            detectRetina: true,
-            attribution: selectedTileServer.attribution,
-        }).addTo(this.map);
 
         this.Controlledlayer = L.control.layers(null).addTo(this.map);
 		this.map.on("zoomend", () => {
@@ -115,7 +91,15 @@ export default class PhasorMap {
 			}
 		this.previousZoom = this.map.getZoom();
             this.drawFeatures();
-        });
+		});
+
+		this.map.on('baselayerchange', function (e) {
+			this.backgroundlayer = e.layer;
+		});
+
+		//create new pane for overlays
+		this.map.createPane('overlays');
+		this.map.getPane('overlays').style.zIndex = 450;
     }
 
     updateStaticLayer() {
@@ -157,7 +141,7 @@ export default class PhasorMap {
 
 								return result;
 
-							}
+							}, pane: 'overlays'
 						}).addTo(this.map);
 
 					}
@@ -193,7 +177,7 @@ export default class PhasorMap {
 
 									return result;
 
-								}
+								}, pane: 'overlays'
 							}).addTo(this.map);
 
 						}
@@ -206,6 +190,7 @@ export default class PhasorMap {
 							layers: this.ctrl.customlayerData[layer.name].layer,
 							format: 'image/png',
 							opacity: this.ctrl.customlayerData[layer.name].oppacity,
+							pane: 'overlays'
 						}).addTo(this.map);
 
 					}
@@ -218,6 +203,7 @@ export default class PhasorMap {
 								layers: this.ctrl.customlayerData[layer.name].layer,
 								format: 'image/png',
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
+								pane: 'overlays'
 							}).addTo(this.map);
 
 
@@ -231,6 +217,7 @@ export default class PhasorMap {
 							reuseTiles: true,
 							detectRetina: true,
 							opacity: this.ctrl.customlayerData[layer.name].oppacity,
+							pane: 'overlays'
 						}).addTo(this.map);
 
 					}
@@ -242,6 +229,7 @@ export default class PhasorMap {
 								reuseTiles: true,
 								detectRetina: true,
 								opacity: this.ctrl.customlayerData[layer.name].oppacity,
+								pane: 'overlays'
 							});
 
 						}
@@ -263,10 +251,52 @@ export default class PhasorMap {
 				}
 			});
 
-		
 
-			if (Object.keys(this.switchableLayer).length > 0) {
+			if (this.ctrl.panel.multiMaps) {
+				this.updateControlledMaps();
+
+				this.ctrl.panel.selectableMaps.forEach(item => {
+					if (!this.ControlledMaps[item.name]) {
+						//Special Case if this is the only map it has to be added enabled
+						// Occurs when changing map in multi map but only one map option
+						
+						let selectedTileServer = tileServers[item.map];
+
+						if (this.ctrl.panel.selectableMaps.length == 1) {
+							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
+								maxZoom: 18,
+								subdomains: selectedTileServer.subdomains,
+								reuseTiles: true,
+								detectRetina: true,
+								attribution: selectedTileServer.attribution,
+							}).addTo(this.map);
+						}
+						else {
+							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
+								maxZoom: 18,
+								subdomains: selectedTileServer.subdomains,
+								reuseTiles: true,
+								detectRetina: true,
+								attribution: selectedTileServer.attribution,
+							});
+						}
+					
+					}
+				});
+			}
+
+			
+			if (Object.keys(this.switchableLayer).length > 0 && (!this.ctrl.panel.multiMaps || Object.keys(this.ControlledMaps).length == 1)) {
 				this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
+				console.log("Case 1")
+			}
+			else if (Object.keys(this.switchableLayer).length == 0 && this.ctrl.panel.multiMaps && Object.keys(this.ControlledMaps).length > 1) {
+				this.Controlledlayer = L.control.layers(this.ControlledMaps, null, { collapsed: false }).addTo(this.map);
+				console.log("Case 2")
+			}
+			else if (this.ctrl.panel.multiMaps && Object.keys(this.ControlledMaps).length > 1) {
+				this.Controlledlayer = L.control.layers(this.ControlledMaps, this.switchableLayer, { collapsed: false }).addTo(this.map);
+				console.log("Case 3")
 			}
 
 			this.SortLayerZindex();
@@ -277,7 +307,6 @@ export default class PhasorMap {
 
 	CreateTextLayer(data) {
 		let result: any[] = [];
-
 		data.forEach(item => {
 			let txt = item.Text;
 
@@ -297,8 +326,7 @@ export default class PhasorMap {
 				txt = txt.replace(str, '');
 			}
 			}
-				
-			
+
 			let myIcon = L.divIcon({ html: txt });
 			let marker = L.marker([item.Latitude, item.Longitude], { icon: myIcon });
 
@@ -336,10 +364,7 @@ export default class PhasorMap {
 
 		keystoSort.sort(this.sortFunc);
 
-		//Base Layer on Bottom
-		if (this.backgroundlayer) {
-			this.backgroundlayer.bringToFront();
-		}
+	
 
 		//Map Layers accoring to zIndex
 		let i;
@@ -389,34 +414,69 @@ export default class PhasorMap {
 			this.map.removeLayer(this.switchableLayer[key]);
             delete this.switchableLayer[key];
         }
-       
     }
 
+	updateControlledMaps() {
+		let keysToDelete: string[] = [];
+		console.log(this.ControlledMaps);
+		console.log(this.ctrl.panel.selectableMaps)
 
-	updateBaseLayer() {
-	
-		var selectedTileServer;
-		this.backgroundlayer.remove(this.map);
+		for (let key in this.ControlledMaps) {
+			let index = _.find(this.ctrl.panel.selectableMaps, item => {
+				return item.name === key;
+			});
 
-		if (this.ctrl.tileServer === 'ESRI') {
-			if (this.map.getZoom() >= 7.0) {
-				selectedTileServer = tileServers['Esri NatGeo'];
+			if (index) {
+
+				if (!index.forceReload) {
+					index.forceReload = false;
+				}
+				else {
+					keysToDelete.push(key);
+					index.forceReload = false;
+				}
 			}
 			else {
-				selectedTileServer = tileServers['Esri WorldPhysical'];
+				keysToDelete.push(key);
 			}
 		}
-		else {
-			selectedTileServer = tileServers[this.ctrl.tileServer];
-		}
 
-		this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
-            maxZoom: 18,
-            subdomains: selectedTileServer.subdomains,
-            reuseTiles: true,
-            detectRetina: true,
-            attribution: selectedTileServer.attribution,
-        }).addTo(this.map);
+		for (let key of keysToDelete) {
+			this.map.removeLayer(this.ControlledMaps[key]);
+			delete this.ControlledMaps[key];
+		}
+	}
+
+	updateBaseLayer() {
+
+		if (!this.ctrl.panel.multiMap) {
+
+			this.ControlledMaps = {};
+			var selectedTileServer;
+
+			this.backgroundlayer.remove(this.map);
+			
+			
+			if (this.ctrl.tileServer === 'ESRI') {
+				if (this.map.getZoom() >= 7.0) {
+					selectedTileServer = tileServers['Esri NatGeo'];
+				}
+				else {
+					selectedTileServer = tileServers['Esri WorldPhysical'];
+				}
+			}
+			else {
+				selectedTileServer = tileServers[this.ctrl.tileServer];
+			}
+
+			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
+				maxZoom: 18,
+				subdomains: selectedTileServer.subdomains,
+				reuseTiles: true,
+				detectRetina: true,
+				attribution: selectedTileServer.attribution,
+			}).addTo(this.map);
+		}
     }
 
     createLegend() {
@@ -654,6 +714,7 @@ export default class PhasorMap {
         return [latlng.lat, latlng.lng];
     }
     //End PhasporClock Section
+
     calcCircleSize(dataPointValue) {
         const circleMinSize = parseInt(this.ctrl.panel.circleMinSize, 10) || 2;
         const circleMaxSize = parseInt(this.ctrl.panel.circleMaxSize, 10) || 30;
