@@ -105,7 +105,7 @@ export default class PhasorMap {
 
 		//create new pane for overlays
 		this.map.createPane('overlays');
-		this.map.getPane('overlays').style.zIndex = 450;
+		this.map.getPane('overlays').style.zIndex = 350;
 		this.map.getPane('overlays').style.pointerEvents = 'none';
     }
 
@@ -122,6 +122,7 @@ export default class PhasorMap {
 					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
 						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
 							this.staticSeperateLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
+								pane: 'overlays',
 								style: function (feature) {
 									let result = {};
 									if (feature.properties.stroke) {
@@ -148,7 +149,7 @@ export default class PhasorMap {
 
 									return result;
 
-								}, pane: 'overlays'
+								}
 							}).addTo(this.map);
 						}
 
@@ -184,33 +185,34 @@ export default class PhasorMap {
 							}
 
 							this.switchableLayer[layer.name] = L.geoJSON(cleanData, {
-									style: function (feature) {
-										let result = {};
+								pane: 'overlays',
+								style: function (feature) {
+									let result = {};
 
-										if (feature.properties.stroke) {
-											result["color"] = feature.properties.stroke;
-											result["stroke"] = true;
+									if (feature.properties.stroke) {
+										result["color"] = feature.properties.stroke;
+										result["stroke"] = true;
+									}
+									if (feature.properties.weight) {
+										result["weight"] = feature.properties.weight;
+										result["stroke"] = true;
+									}
+									if (feature.properties.fillcolor) {
+										result["fillColor"] = feature.properties.fillcolor;
+										result["fill"] = true;
+									}
+									if (feature.properties.hasOwnProperty('fillOpacity')) {
+										result["fillOpacity"] = feature.properties.fillOpacity;
+										result["fill"] = true;
+										if (feature.properties.fillOpacity === 0) {
+											result['fill'] = false;
 										}
-										if (feature.properties.weight) {
-											result["weight"] = feature.properties.weight;
-											result["stroke"] = true;
-										}
-										if (feature.properties.fillcolor) {
-											result["fillColor"] = feature.properties.fillcolor;
-											result["fill"] = true;
-										}
-										if (feature.properties.hasOwnProperty('fillOpacity')) {
-											result["fillOpacity"] = feature.properties.fillOpacity;
-											result["fill"] = true;
-											if (feature.properties.fillOpacity === 0) {
-												result['fill'] = false;
-											}
-										}
+									}
 
-										return result;
+									return result;
 
-									}, pane: 'overlays'
-								}).addTo(this.map);
+								}
+							}).addTo(this.map);
 						}
 
 					}
@@ -245,7 +247,7 @@ export default class PhasorMap {
 						} else {
 							this.switchableLayer[layer.name].setOpacity(0.0);
 						}
-						
+
 
 					}
 
@@ -276,24 +278,30 @@ export default class PhasorMap {
 							this.switchableLayer[layer.name].setOpacity(this.ctrl.customlayerData[layer.name].oppacity);
 						} else {
 							this.switchableLayer[layer.name].setOpacity(0.0);
-						} 
+						}
 					}
 					else if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "text") {
 						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.staticSeperateLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+							this.staticSeperateLayer[layer.name] = this.addText(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data)).addTo(this.map);
 						}
 					}
 					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "text") {
 						if (this.switchableLayer[layer.name]) {
 							this.switchableLayer[layer.name].clearLayers();
-						}
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data));
+
+							if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
+								this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data).forEach(item => {
+
+									this.switchableLayer[layer.name].addLayer(item);
+							});
+							}
+							else {
+								this.switchableLayer[layer.name].addLayer(this.CreateTextLayer([{ "Text": "", "Longitude": -84.899707, "Latitude": 34.759979 }])[0]);
+							}
 						}
 						else {
-							this.switchableLayer[layer.name] = this.addFeatures(this.CreateTextLayer([{ "Text": "", "Longitude": -84.899707, "Latitude": 34.759979}]));
+							this.switchableLayer[layer.name] = this.addText(this.CreateTextLayer([{ "Text": "", "Longitude": -84.899707, "Latitude": 34.759979 }]));
 						}
-						
 					}
 					else { console.log(this.ctrl.customlayerData[layer.name])}
 
@@ -373,7 +381,10 @@ export default class PhasorMap {
 			}
 			}
 
-			let myIcon = L.divIcon({ html: txt });
+			let myIcon = L.divIcon({
+				html: txt,
+				iconSize: [30, 10],
+				iconAnchor: [15, 0] });
 			let marker = L.marker([item.Latitude, item.Longitude], { icon: myIcon });
 
 			result.push(marker);
@@ -446,10 +457,13 @@ export default class PhasorMap {
 
         let keysToDelete: string[] = [];
 
-        for (let key in this.switchableLayer) {
+		for (let key in this.switchableLayer) {
 			if ((this.ctrl.customlayerData[key]) && (this.ctrl.customlayerData[key].usercontrolled) && (!this.ctrl.customlayerData[key].forceReload)) {
 				this.ctrl.customlayerData[key].forceReload = false;
-            }
+			}
+			else if (!this.ctrl.customlayerData[key]) {
+				keysToDelete.push(key);
+			}
             else {
 				keysToDelete.push(key);
 				this.ctrl.customlayerData[key].forceReload = false;
@@ -862,8 +876,11 @@ export default class PhasorMap {
 
     addFeatures(layers) {
         return (<any>window).L.layerGroup(layers).addTo(this.map);
-    }
+	}
 
+	addText(layers) {
+		return (<any>window).L.layerGroup(layers, { pane: 'overlays' });
+	}
     removeFeatures() {
         this.map.removeLayer(this.featuresLayer);
         this.featuresLayer = null;
