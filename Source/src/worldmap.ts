@@ -17,6 +17,7 @@ export default class PhasorMap {
 	backgroundlayer: any;
 	previousZoom: number;
 	ControlledMaps: any;
+	currentBackgroundLayerName: string;
 
     constructor(ctrl, mapContainer) {
         this.ctrl = ctrl;
@@ -58,9 +59,10 @@ export default class PhasorMap {
 			}).addTo(this.map);
 
 			this.backgroundlayer = this.ControlledMaps[this.ctrl.panel.selectableMaps[0].name];
-
+			this.currentBackgroundLayerName = this.ctrl.panel.selectableMaps[0].name;
 		}
 		else {
+			this.currentBackgroundLayerName = this.ctrl.tileServer;
 			if (this.ctrl.tileServer === 'ESRI') {
 				this.previousZoom = this.map.getZoom();
 				if (this.map.getZoom() >= 7) {
@@ -101,6 +103,7 @@ export default class PhasorMap {
 
 		this.map.on('baselayerchange', function (e) {
 			this.backgroundlayer = e.layer;
+			console.log(e);
 		});
 
 		//create new pane for overlays
@@ -365,16 +368,30 @@ export default class PhasorMap {
 			let txt = item.Text;
 
 		while (txt.search(/\[.*\]/g) !== -1) {
-			let tag = txt.match(/\[([^\]]*)\]/);
+			let tag = txt.match(/\[([^\]]*>?[^\]]*)\]/);
+			
 			let pointtag = tag[1];
 			let str = '[' + pointtag + ']'
-			
+			let formatstring = "";
+
+			if (pointtag.search(/>/g) !== -1) {
+				let lst = pointtag.split(">");
+				pointtag = lst[0];
+				formatstring = lst[1];
+			}
+
 			let index = _.find(this.ctrl.data, item => {
 				return item.key === pointtag;
 			});
 
 			if (index && index.hasOwnProperty('value')) {
-				txt = txt.replace(str, index.value);
+				if (formatstring !== "") {
+					txt = txt.replace(str, index.value.toFixed(parseInt(formatstring)));
+				}
+				else {
+					txt = txt.replace(str, index.value);
+				}
+				
 			}
 			else {
 				txt = txt.replace(str, '');
@@ -464,7 +481,8 @@ export default class PhasorMap {
 			else if (!this.ctrl.customlayerData[key]) {
 				keysToDelete.push(key);
 			}
-            else {
+			else {
+				
 				keysToDelete.push(key);
 				this.ctrl.customlayerData[key].forceReload = false;
             }
@@ -478,9 +496,7 @@ export default class PhasorMap {
 
 	updateControlledMaps() {
 		let keysToDelete: string[] = [];
-		console.log(this.ControlledMaps);
-		console.log(this.ctrl.panel.selectableMaps)
-
+		
 		for (let key in this.ControlledMaps) {
 			let index = _.find(this.ctrl.panel.selectableMaps, item => {
 				return item.name === key;
@@ -510,7 +526,7 @@ export default class PhasorMap {
 	updateBaseLayer() {
 
 		if (!this.ctrl.panel.multiMap) {
-
+			this.currentBackgroundLayerName = this.ctrl.tileServer;
 			this.ControlledMaps = {};
 			var selectedTileServer;
 

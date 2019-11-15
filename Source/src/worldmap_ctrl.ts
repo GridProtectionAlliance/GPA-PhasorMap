@@ -70,7 +70,7 @@ const mapCenters = {
   "Last GeoHash": { mapCenterLatitude: 0, mapCenterLongitude: 0 }
 };
 
-const mapOption = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap', 'ESRI','Esri WorldShaded'];
+const mapOption = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap', 'Esri NatGeo','Esri WorldShaded','Esri WorldShaded'];
 
 export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	static templateUrl = "partials/module.html";
@@ -470,7 +470,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
 							promiseCtrl.customlayerData[layer.name].data = res;
 							promiseCtrl.customlayerData[layer.name].usercontrolled = layer.usercontrolled;
-							promiseCtrl.customlayerData[layer.name].forceReload = true;
+							promiseCtrl.customlayerData[layer.name].forceReload = false;
 							layer.forceReload = false;
 						}
 						else {
