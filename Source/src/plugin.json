@@ -3,7 +3,7 @@
 "name":"GPAPhasormap", 
 "id":"grafana-pmumap-panel", 
 "info":{ 
-"description":"Phasor-mappanelforGrafana.ExtensionoftheWorldmappaneltointegratewiththe openHistorian and openPDC.",             
+"description":"Phasor-mappanelforGrafana.ExtensionoftheWorldmappaneltointegratewiththeopenHistorian and openPDC.",              
 "author":{ 
 "name":"GridProtectionAlliance", 
 "url":"https//gridprotectionalliance.org" 
@@ -37,7 +37,7 @@
 "path":"images/worldmap-light-theme.png" 
 } 
 ], 
-"version":"0.8.1", 
+"version":"0.9.1", 
 "updated": "2019-11-19" 
 }, 
 "dependencies":{ 
