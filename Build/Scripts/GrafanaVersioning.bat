@@ -4,6 +4,7 @@ SetLocal enabledelayedexpansion
 ::set filename= .\src\plugin.json 
 SET logfile=%1
 SET versionfile=%2
+SET versionTrackFile=%3
 
 ::SET logfile=logfile.output
 ::SET versionfile=.\src\plugin.json
@@ -32,6 +33,8 @@ for /f "tokens=1-2* delims=: " %%A in (%versionfile%) do (
 		SET \A version = version+1
 		ECHO "version":!preversion!.!version!.!postversion! >> version.temp
 		ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%
+		for /f "useback tokens=*" %%x in ('!preversion!.!version!.!postversion!') do set versionString=%%~a
+		ECHO %versionString% >> %versionTrackFile%
 	) ELSE IF %%A == "updated"  (
 		ECHO "updated": "%updateDate%" >> version.temp
 	) ELSE (
