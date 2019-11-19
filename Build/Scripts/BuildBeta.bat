@@ -72,7 +72,7 @@ RMDIR /S /Q ..\%ZipDirectory%\
 
 set /p versionContent=< %VersionTrackFile%
 
-XCOPY ..\ %destFolder% /E /Y /U >> %logFile%
+XCOPY ..\* %destFolder% /E /Y /U >> %logFile%
 
 CALL git add ../../* >> %logFile%
 CALL git commit -m "%ProjectName%: Version change for build %versionContent%" >> %logFile%
