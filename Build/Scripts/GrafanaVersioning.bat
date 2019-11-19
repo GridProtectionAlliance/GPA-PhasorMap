@@ -2,11 +2,11 @@
 SetLocal enabledelayedexpansion
 
 ::set filename= .\src\plugin.json 
-SET logfile="%1"
-SET versionfile="%2"
+SET logfile=%1
+SET versionfile=%2
 
-SET logfile="logfile.output"
-SET versionfile=".\src\plugin.json"
+SET logfile=logfile.output
+SET versionfile=.\src\plugin.json
 
 
 if exist ".\version.temp" ( 
@@ -25,25 +25,24 @@ if exist %versionfile% (
 ECHO Processing Version File >> %logfile%
 
 for /f "tokens=1-2* delims=: " %%A in (%versionfile%) do (
-
-IF %%A == "version" (
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET version=%%y
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET preversion=%%x
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
-	SET \A version = version+1;
-	ECHO "version":!preversion!.!version!.!postversion! >> version.temp
-	ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%
+	IF %%A == "version" (
+		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET version=%%y
+		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET preversion=%%x
+		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
+		SET \A version = version+1
+		ECHO "version":!preversion!.!version!.!postversion! >> version.temp
+		ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%
 	) ELSE IF %%A == "updated"  (
-	ECHO "updated": "%updateDate%" >> version.temp
+		ECHO "updated": "%updateDate%" >> version.temp
 	) ELSE (
-	IF NOT "%%B" == "" (
-	  echo %%A:%%B%%C >> version.temp
-	  ) ELSE (
-	  echo %%A%%C >> version.temp
-	  )
-	 )
- )
-
+		IF NOT "%%B" == "" (
+			echo %%A:%%B%%C >> version.temp
+		) ELSE (
+			echo %%A%%C >> version.temp
+		)
+	)
+)
+ 
 del %versionfile% >> %logfile%
 move .\version.temp %versionfile% >> %logfile%
 
