@@ -34,7 +34,7 @@ for /f "tokens=1-2* delims=: " %%A in (%versionfile%) do (
 		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
 		SET /A version = !version!+1
 		ECHO "version":!preversion!.!version!.!postversion! >> version.temp
-		ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%'
+		ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%
 		SET versionString=!preversion!.!version!.!postversion!
 		for /f "useback tokens=1 delims=," %%x in ('!preversion!.!version!.!postversion!') do set versionString=%%~x
 		ECHO !versionString! >> %versionTrackFile%

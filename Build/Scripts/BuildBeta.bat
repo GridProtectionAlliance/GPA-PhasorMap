@@ -33,17 +33,24 @@ SetLocal enabledelayedexpansion
 ECHO Starting Build
 
 SET VersionTrackFile=GPA-PhasorMap.version
-
+SET buildFolder=..\Output\Release\dist
 SET LogPath=..\Build\Scripts\
+SET destFolder=N:\GPA-PhasorMap\
+SET ProjectName=GPA Phasor Map
+SET PluginFile=.\src\plugin.json
+SET ZipDirectory=grafana-pmumap-panel
+SET ZipFile=PhasorMapBinaries.zip
+
 IF NOT "%1" == "" (SET logFile=%1)
 
-SET buildFolder=..\Output\Release\dist
 copy NUL "%logFile%"
+
+
 
 CD "..\..\Source\" 
 ECHO Changed Path To %CD% >> %LogPath%%logFile%
 
-CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% .\src\plugin.json %LogPath%%VersionTrackFile%
+CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% %PluginFile% %LogPath%%VersionTrackFile%
 
 ECHO Install NPM >> %LogPath%%logFile%
 CALL npm install  >> %LogPath%%logFile%
@@ -56,16 +63,19 @@ CD ..\Build\Scripts\
 ECHO Changed Path to %CD% >> %logFile%
 ECHO Create ZIP >> %logFile%
 
-MKDIR ..\grafana-pmumap-panel\
-XCOPY %buildfolder% ..\grafana-pmumap-panel /E /Y >> %logFile%
-IF Exist (..\PhasorMapBinaries.zip) (del "..\PhasorMapBinaries.zip" >> %logFile% )
-Powershell -COMMAND Compress-Archive -Path ..\grafana-pmumap-panel -DestinationPath ..\PhasorMapBinaries.zip >> %logFile%
+MKDIR ..\%ZipDirectory%\
+XCOPY %buildfolder% ..\%ZipDirectory% /E /Y >> %logFile%
+IF Exist (..\%ZipFile%) (del "..\%ZipFile%" >> %logFile% )
+Powershell -COMMAND Compress-Archive -Path ..\%ZipDirectory% -DestinationPath ..\%ZipFile% >> %logFile%
 
-RMDIR /S /Q ..\grafana-pmumap-panel\
+RMDIR /S /Q ..\%ZipDirectory%\
 
 set /p versionContent=< %VersionTrackFile%
-CALL git add ../../* >> %logFile%
 
-ECHO New Version: %versionContent%
+XCOPY ..\ %destFolder% /E /Y /U >> %logFile%
+
+CALL git add ../../* >> %logFile%
+CALL git -m commit "%ProjectName%: Version change for build %versionContent%"
+
 EndLocal
 
