@@ -14,6 +14,8 @@ if exist ".\version.temp" (
 del ".\version.temp" >> %logfile% 
 )
 copy NUL .\version.temp >> %logfile%
+copy NUL %versionTrackFile% >> %logfile%
+
 
 for /f "delims=" %%a in ('powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
 
@@ -30,11 +32,12 @@ for /f "tokens=1-2* delims=: " %%A in (%versionfile%) do (
 		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET version=%%y
 		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET preversion=%%x
 		for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
-		SET \A version = version+1
+		SET /A version = !version!+1
 		ECHO "version":!preversion!.!version!.!postversion! >> version.temp
-		ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%
-		for /f "useback tokens=*" %%x in ('!preversion!.!version!.!postversion!') do set versionString=%%~a
-		ECHO %versionString% >> %versionTrackFile%
+		ECHO Updated to Version !preversion!.!version!.!postversion! >> %logfile%'
+		SET versionString=!preversion!.!version!.!postversion!
+		for /f "useback tokens=1 delims=," %%x in ('!preversion!.!version!.!postversion!') do set versionString=%%~x
+		ECHO !versionString! >> %versionTrackFile%
 	) ELSE IF %%A == "updated"  (
 		ECHO "updated": "%updateDate%" >> version.temp
 	) ELSE (

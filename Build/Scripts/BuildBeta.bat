@@ -43,7 +43,7 @@ copy NUL "%logFile%"
 CD "..\..\Source\" 
 ECHO Changed Path To %CD% >> %LogPath%%logFile%
 
-CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% .\src\version.json %LogPath%%VersionTrackFile%
+CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% .\src\plugin.json %LogPath%%VersionTrackFile%
 
 ECHO Install NPM >> %LogPath%%logFile%
 CALL npm install  >> %LogPath%%logFile%
@@ -64,7 +64,7 @@ Powershell -COMMAND Compress-Archive -Path ..\grafana-pmumap-panel -DestinationP
 RMDIR /S /Q ..\grafana-pmumap-panel\
 
 set /p versionContent=< %VersionTrackFile%
-CALL git add * >> %logFile%
+CALL git add ../../* >> %logFile%
 
 ECHO New Version: %versionContent%
 EndLocal
