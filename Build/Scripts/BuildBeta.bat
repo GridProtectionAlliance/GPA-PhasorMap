@@ -61,7 +61,7 @@ Powershell -COMMAND Compress-Archive -Path ..\grafana-pmumap-panel -DestinationP
 
 RMDIR /S /Q ..\grafana-pmumap-panel\
 
-GIT add *
+CALL git add * >> %logFile%
 
 EndLocal
 

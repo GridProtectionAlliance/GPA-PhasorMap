@@ -5,8 +5,8 @@ SetLocal enabledelayedexpansion
 SET logfile=%1
 SET versionfile=%2
 
-SET logfile=logfile.output
-SET versionfile=.\src\plugin.json
+::SET logfile=logfile.output
+::SET versionfile=.\src\plugin.json
 
 
 if exist ".\version.temp" ( 
