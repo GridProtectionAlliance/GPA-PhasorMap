@@ -40,6 +40,7 @@ copy NUL "%logFile%"
 
 CD "..\..\Source\" 
 ECHO Changed Path To %CD% >> %LogPath%%logFile%
+
 CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% .\src\version.json
 
 ECHO Install NPM >> %LogPath%%logFile%
@@ -57,5 +58,10 @@ MKDIR ..\grafana-pmumap-panel\
 XCOPY %buildfolder% ..\grafana-pmumap-panel /E /Y >> %logFile%
 IF Exist (..\PhasorMapBinaries.zip) (del "..\PhasorMapBinaries.zip" >> %logFile% )
 Powershell -COMMAND Compress-Archive -Path ..\grafana-pmumap-panel -DestinationPath ..\PhasorMapBinaries.zip >> %logFile%
+
+RMDIR /S /Q ..\grafana-pmumap-panel\
+
+GIT add *
+
 EndLocal
 
