@@ -75,7 +75,7 @@ set /p versionContent=< %VersionTrackFile%
 XCOPY ..\ %destFolder% /E /Y /U >> %logFile%
 
 CALL git add ../../* >> %logFile%
-CALL git -m commit "%ProjectName%: Version change for build %versionContent%"
+CALL git commit -m "%ProjectName%: Version change for build %versionContent%"
 
 EndLocal
 

@@ -1,7 +1,7 @@
 ::*******************************************************************************************************
 ::  BuildNightly.bat - Gbtc
 ::
-::  Copyright © 2013, Grid Protection Alliance.  All Rights Reserved.
+::  Copyright © 2019, Grid Protection Alliance.  All Rights Reserved.
 ::
 ::  Licensed to the Grid Protection Alliance (GPA) under one or more contributor license agreements. See
 ::  the NOTICE file distributed with this work for additional information regarding copyright ownership.
@@ -16,61 +16,60 @@
 ::
 ::  Code Modification History:
 ::  -----------------------------------------------------------------------------------------------------
-::  10/20/2009 - Pinal C. Patel
+::  11/19/2019 - C. Lackner
 ::       Generated original version of source code.
-::  09/14/2010 - Mihir Brahmbhatt
-::		 Change Framework path from v3.5 to v4.0
-::  10/03/2010 - Pinal C. Patel
-::       Updated to use MSBuild 4.0.
-::  08/25/2014 - Gavin E. Holden
-::       Modified to call CommonBuild.bat.
-::  01/13/2015 - Stephen C. Wills
-::       Modified to match BuildBetaNoHelp.bat.
 ::
 ::*******************************************************************************************************
 
 @ECHO OFF
 SetLocal enabledelayedexpansion
 
-IF NOT "%1" == "" (SET logFlag=  "..\Build\Scripts\%1")
-IF "%1" == "" (SET logFlag=NUL)
-CD ..\..\Source\
+ECHO Starting Build
 
-set filename= .\src\plugin.json
-if exist "%filename%.temp" del "%filename%.temp"
-type NUL> %filename%.temp
+SET VersionTrackFile=GPA-PhasorMap.version
+SET buildFolder=..\Output\Release\dist
+SET LogPath=..\Build\Scripts\
+SET destFolder=N:\GPA-PhasorMap\
+SET ProjectName=GPA Phasor Map
+SET PluginFile=.\src\plugin.json
+SET ZipDirectory=grafana-pmumap-panel
+SET ZipFile=PhasorMapBinaries.zip
 
-for /f "delims=" %%a in (' powershell get-date -format "{yyyy-MM-dd}" ') do set updateDate=%%a
+IF NOT "%1" == "" (SET logFile=%1)
+
+copy NUL "%logFile%"
 
 
-for /f "tokens=1-2* delims=: " %%A in (%filename%) do (
 
-IF %%A == "version" (
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET version=%%y
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET preversion=%%x
-	for /f "tokens=1-3 delims=. " %%x in ("%%B") do SET postversion=%%z
-	SET \A version = version+1;
-	ECHO "version":!preversion!.!version!.!postversion! >> %filename%.temp
-	) ELSE IF %%A == "updated"  (
-	ECHO "updated": "%updateDate%" >> %filename%.temp
-	) ELSE (
-	IF NOT "%%B" == "" (
-	  echo %%A:%%B%%C >> %filename%.temp
-	  ) ELSE (
-	  echo %%A%%C >> %filename%.temp
-	  )
-	 )
- )
- 
-del %filename%
-ren %filename%.temp plugin.json
+CD "..\..\Source\" 
+ECHO Changed Path To %CD% >> %LogPath%%logFile%
 
-ECHO Install NPM > %logFlag%
-CALL npm install  >> %logFlag%
-ECHO BUILD TS >> %logFlag%
-CALL .\node_modules\.bin\webpack  --mode=production >> %logFlag%
+CALL ../Build/Scripts/GrafanaVersioning.bat %LogPath%%logFile% %PluginFile% %LogPath%%VersionTrackFile%
 
-CD ..\Build\
-ECHO Create ZIP >> %logFlag%
-Powershell -COMMAND Compress-Archive -Path .\Output\Release\dist -DestinationPath .\PhasorMapBinaries.zip >> %logFlag%
+ECHO Install NPM >> %LogPath%%logFile%
+CALL npm install  >> %LogPath%%logFile%
+ECHO Run Yarn >> %LogPath%%logFile%
+CALL .\node_modules\.bin\yarn >> %LogPath%%logFile%
+ECHO BUILD TS >> %LogPath%%logFile%
+CALL .\node_modules\.bin\webpack  --mode=production >> %LogPath%%logFile%
+
+CD ..\Build\Scripts\
+ECHO Changed Path to %CD% >> %logFile%
+ECHO Create ZIP >> %logFile%
+
+MKDIR ..\%ZipDirectory%\
+XCOPY %buildfolder% ..\%ZipDirectory% /E /Y >> %logFile%
+IF Exist (..\%ZipFile%) (del "..\%ZipFile%" >> %logFile% )
+Powershell -COMMAND Compress-Archive -Path ..\%ZipDirectory% -DestinationPath ..\%ZipFile% >> %logFile%
+
+RMDIR /S /Q ..\%ZipDirectory%\
+
+set /p versionContent=< %VersionTrackFile%
+
+XCOPY ..\ %destFolder% /E /Y /U >> %logFile%
+
+CALL git add ../../* >> %logFile%
+CALL git commit -m "%ProjectName%: Version change for build %versionContent%"
+
 EndLocal
+
