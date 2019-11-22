@@ -29,7 +29,7 @@ ECHO Starting Build
 SET VersionTrackFile=GPA-PhasorMap.version
 SET buildFolder=..\Output\Release\dist
 SET LogPath=..\Build\Scripts\
-SET destFolder=N:\GPA-PhasorMap\
+SET destFolder=N:\GrafanaPanels\
 SET ProjectName=GPA Phasor Map
 SET PluginFile=.\src\plugin.json
 SET ZipDirectory=grafana-pmumap-panel
