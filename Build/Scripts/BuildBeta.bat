@@ -36,6 +36,8 @@ SET VersionTrackFile=GPA-PhasorMap.version
 SET buildFolder=..\Output\Release\dist
 SET LogPath=..\Build\Scripts\
 SET destFolder=N:\GrafanaPanels\
+SET BinarydestFolder=N:\GrafanaPanels\Binaries
+
 SET ProjectName=GPA Phasor Map
 SET PluginFile=.\src\plugin.json
 SET ZipDirectory=grafana-pmumap-panel
@@ -68,11 +70,14 @@ XCOPY %buildfolder% ..\%ZipDirectory% /E /Y >> %logFile%
 IF Exist (..\%ZipFile%) (del "..\%ZipFile%" >> %logFile% )
 Powershell -COMMAND Compress-Archive -Path ..\%ZipDirectory% -DestinationPath ..\%ZipFile% >> %logFile%
 
-RMDIR /S /Q ..\%ZipDirectory%\
+
 
 set /p versionContent=< %VersionTrackFile%
 
 XCOPY ..\* %destFolder% /E /Y /U >> %logFile%
+XCOPY ..\%ZipDirectory% %BinaryDestFolder%\%ZipDirectory% /E /Y /U >> %logFile%
+
+RMDIR /S /Q ..\%ZipDirectory%\
 
 CALL git add ../../* >> %logFile%
 CALL git commit -m "%ProjectName%: Version change for build %versionContent%" >> %logFile%
