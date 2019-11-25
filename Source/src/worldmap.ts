@@ -84,13 +84,13 @@ export default class PhasorMap {
 
 		//This needs to be more general .... see later...
 		this.map.on("zoomend", () => {
-			if (this.map.getZoom() < 7.0 && this.previousZoom  >= 7.0)
-			{
-				this.updateBaseLayer();
-			}
-			if (this.map.getZoom() >= 7.0 && this.previousZoom < 7.0) {
-				this.updateBaseLayer();
-			}
+			//if (this.map.getZoom() < 7.0 && this.previousZoom  >= 7.0)
+			//{
+			//	this.updateBaseLayer();
+			//}
+			//if (this.map.getZoom() >= 7.0 && this.previousZoom < 7.0) {
+			//	this.updateBaseLayer();
+			//}
 		this.previousZoom = this.map.getZoom();
 			this.drawFeatures();
 			console.log(this.previousZoom)
@@ -525,18 +525,9 @@ export default class PhasorMap {
 
 			this.backgroundlayer.remove(this.map);
 			
-			
-			if (this.ctrl.tileServer === 'ESRI') {
-				if (this.map.getZoom() >= 7.0) {
-					selectedTileServer = tileServers['Esri NatGeo'];
-				}
-				else {
-					selectedTileServer = tileServers['Esri WorldPhysical'];
-				}
-			}
-			else {
-				selectedTileServer = tileServers[this.ctrl.tileServer];
-			}
+
+			selectedTileServer = tileServers[this.ctrl.tileServer];
+
 
 			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
                 maxZoom: selectedTileServer.maxZoom,
