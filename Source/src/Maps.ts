@@ -48,7 +48,6 @@ export default {
 		attribution: 'Tiles &copy; Esri &mdash; Source: Esri',
 		maxZoom: 13,
 		subdomains: 'r',
-		maxZoom: 13,
 	},
 	
 

@@ -63,18 +63,8 @@ export default class PhasorMap {
 		}
 		else {
 			this.currentBackgroundLayerName = this.ctrl.tileServer;
-			if (this.ctrl.tileServer === 'ESRI') {
-				this.previousZoom = this.map.getZoom();
-				if (this.map.getZoom() >= 7) {
-					selectedTileServer = tileServers['Esri NatGeo'];
-				}
-				else {
-					selectedTileServer = tileServers['Esri WorldPhysical'];
-				}
-			}
-			else {
-				selectedTileServer = tileServers[this.ctrl.tileServer];
-			}
+			selectedTileServer = tileServers[this.ctrl.tileServer];
+			
 			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
 				maxZoom: selectedTileServer.maxZoom,
 				subdomains: selectedTileServer.subdomains,
@@ -84,7 +74,13 @@ export default class PhasorMap {
 			}).addTo(this.map);
 		}
 
-		this.Controlledlayer = L.control.layers(null).addTo(this.map);
+        this.Controlledlayer = L.control.layers(null).addTo(this.map);
+
+        //create new pane for overlays
+        this.map.createPane('overlays');
+        this.map.getPane('overlays').style.zIndex = 350;
+        this.map.getPane('overlays').style.pointerEvents = 'none';
+
 
 		//This needs to be more general .... see later...
 		this.map.on("zoomend", () => {
@@ -106,10 +102,7 @@ export default class PhasorMap {
 			console.log(e);
 		});
 
-		//create new pane for overlays
-		this.map.createPane('overlays');
-		this.map.getPane('overlays').style.zIndex = 350;
-		this.map.getPane('overlays').style.pointerEvents = 'none';
+
     }
 
     updateStaticLayer() {
@@ -324,7 +317,6 @@ export default class PhasorMap {
 
 						if (this.ctrl.panel.selectableMaps.length == 1) {
 							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-								maxZoom: selectedTileServer.maxZoom,
 								maxZoom: selectedTileServer.maxZoom,
 								subdomains: selectedTileServer.subdomains,
 								reuseTiles: true,
@@ -547,7 +539,7 @@ export default class PhasorMap {
 			}
 
 			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
-				maxZoom: 18,
+                maxZoom: selectedTileServer.maxZoom,
 				subdomains: selectedTileServer.subdomains,
 				reuseTiles: true,
 				detectRetina: true,
