@@ -51,7 +51,7 @@ export default class PhasorMap {
 		if (this.ctrl.panel.multiMaps) {
 			selectedTileServer = tileServers[this.ctrl.panel.selectableMaps[0].map];
 			this.ControlledMaps[this.ctrl.panel.selectableMaps[0].name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-				maxZoom: 18,
+				maxZoom: selectedTileServer.maxZoom,
 				subdomains: selectedTileServer.subdomains,
 				reuseTiles: true,
 				detectRetina: true,
@@ -76,7 +76,7 @@ export default class PhasorMap {
 				selectedTileServer = tileServers[this.ctrl.tileServer];
 			}
 			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
-				maxZoom: 18,
+				maxZoom: selectedTileServer.maxZoom,
 				subdomains: selectedTileServer.subdomains,
 				reuseTiles: true,
 				detectRetina: true,
@@ -324,7 +324,8 @@ export default class PhasorMap {
 
 						if (this.ctrl.panel.selectableMaps.length == 1) {
 							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-								maxZoom: 18,
+								maxZoom: selectedTileServer.maxZoom,
+								maxZoom: selectedTileServer.maxZoom,
 								subdomains: selectedTileServer.subdomains,
 								reuseTiles: true,
 								detectRetina: true,
@@ -333,7 +334,7 @@ export default class PhasorMap {
 						}
 						else {
 							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-								maxZoom: 18,
+								maxZoom: selectedTileServer.maxZoom,
 								subdomains: selectedTileServer.subdomains,
 								reuseTiles: true,
 								detectRetina: true,
