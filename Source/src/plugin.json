@@ -8,11 +8,11 @@
 "name":"GridProtectionAlliance", 
 "url":"https//gridprotectionalliance.org" 
 }, 
-"keywords":["worldmap","panel","openhistorian"],
-  "logos": {
-    "small": "images/GPM-logo.png",
-    "large": "images/GPM-logo.png"
-  }, 
+"keywords":["worldmap","panel","openhistorian"], 
+"logos":{ 
+"small":"images/GPM-logo.png", 
+"large":"images/GPM-logo.png" 
+}, 
 "links":[ 
 { 
 "name":"Projectsite", 
@@ -37,8 +37,8 @@
 "path":"images/worldmap-light-theme.png" 
 } 
 ], 
-"version":"0.15.1", 
-"updated": "2019-11-25" 
+"version":"0.16.1", 
+"updated": "2019-11-26" 
 }, 
 "dependencies":{ 
 "grafanaVersion":"3.x.x", 
