@@ -82,7 +82,6 @@ export default class PhasorMap {
         this.map.getPane('overlays').style.pointerEvents = 'none';
 
 
-		//This needs to be more general .... see later...
 		this.map.on("zoomend", () => {
 			//if (this.map.getZoom() < 7.0 && this.previousZoom  >= 7.0)
 			//{
@@ -94,7 +93,11 @@ export default class PhasorMap {
 		this.previousZoom = this.map.getZoom();
 			this.drawFeatures();
 			console.log(this.previousZoom)
-			this.updateStaticLayer();
+            this.updateStaticLayer();
+
+            if (this.ctrl.panel.moveOverlap && this.ctrl.panel.locationData === "OpenHistorian") {
+                this.ctrl.dataFormatter.setOpenHistorian([]);
+            }
 		});
 
 		this.map.on('baselayerchange', function (e) {
@@ -667,6 +670,7 @@ export default class PhasorMap {
 
     createCircles(data) {
         const circles: any[] = [];
+
         data.forEach(dataPoint => {
             if (!dataPoint.locationName) {
                 return;

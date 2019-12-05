@@ -58,7 +58,9 @@ const panelDefaults = {
 	featureType: "circles",
 	multiMaps: false,
 	selectableMaps: [{ name: "default", map: 'CartoDB Positron', forceReload: false }],
-	zoomSteps: 1,
+    zoomSteps: 1,
+    radiusOverlap: 10,
+    moveOverlap: false,
 };
 
 const mapCenters = {
@@ -193,17 +195,8 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
       }  else if (this.panel.locationData === "OpenHistorian") {
           this.series = dataList;
           this.dataFormatter.setOpenHistorian(data);
-      } else {
-        this.series = dataList.map(this.seriesHandler.bind(this));
-        this.dataFormatter.setValues(data);
-      }
-      this.data = data;
+        } 
 
-        this.updateThresholdData();
-        this.updateSecondaryThresholdData();
-
-        this.render();
-      
     } catch (err) {
       appEvents.emit('alert-error', ['Data error', err.toString()])
     }

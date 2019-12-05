@@ -75,10 +75,15 @@ export default class DataFormatter {
                 locationrequest.push(datarequest);
             });
 
-			
+            let requestURL = "../api/grafana/GetLocationData"
+
+            if (this.ctrl.panel.moveOverlap) {
+                requestURL = requestURL + "?radius=" + this.ctrl.panel.radiusOverlap + "&zoom=" + this.ctrl.map.map.getZoom();
+            }
+
             $.ajax({
                 type: "POST",
-				url: "../api/grafana/GetLocationData",
+                url: requestURL,
                 data: JSON.stringify(locationrequest),
                 contentType: "application/json",
                 dataType: "json",
@@ -186,7 +191,14 @@ export default class DataFormatter {
 
             data.newestTS = newestTS;
             data.oldestTS = oldestTS;
-            
+
+            this.ctrl.data = data;
+
+            this.ctrl.updateThresholdData();
+            this.ctrl.updateSecondaryThresholdData();
+
+            this.ctrl.render();
+
         }
     }
 
@@ -311,7 +323,15 @@ setjsonendpoint(data) {
 		data.valueRange = highestValue - lowestValue;
 
 		data.newestTS = newestTS;
-		data.oldestTS = oldestTS;
+        data.oldestTS = oldestTS;
+
+        this.ctrl.data = data;
+
+        this.ctrl.updateThresholdData();
+        this.ctrl.updateSecondaryThresholdData();
+
+        this.ctrl.render();
+
 	}
 }
 }
