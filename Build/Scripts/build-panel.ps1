@@ -53,14 +53,16 @@ function Push-Repository {
 
 function Test-RepositoryChanged {
     $latestTag = & git describe --abbrev=0 --tags
-
-    if ($latestTag -eq $null) {
-        return $true
-    }
 	"Latest Tag Found is: $latestTag"
 	
+    if ($latestTag -eq $null) {
+		"Something went wrong"
+        return $true
+    }
+	
+	
     $commitsSinceTag = & git log --pretty=oneline "$latestTag.."
-	" Commits since latest Tag: $commitsSinceTag.Count"
+	"Commits since latest Tag: $commitsSinceTag.Count"
     return $commitsSinceTag.Count -ne 0
 }
 
