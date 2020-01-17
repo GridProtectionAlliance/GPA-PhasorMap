@@ -57,8 +57,10 @@ function Test-RepositoryChanged {
     if ($latestTag -eq $null) {
         return $true
     }
-
+	"Latest Tag Found is: $latestTag"
+	
     $commitsSinceTag = & git log --pretty=oneline "$latestTag.."
+	" Commits since latest Tag: $commitsSinceTag.Count"
     return $commitsSinceTag.Count -ne 0
 }
 
