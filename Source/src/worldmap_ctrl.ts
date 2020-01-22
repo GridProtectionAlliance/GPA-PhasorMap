@@ -199,6 +199,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
     } catch (err) {
       appEvents.emit('alert-error', ['Data error', err.toString()])
+	  console.log(err)
     }
   }
 
@@ -412,7 +413,11 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
         
 
 		Promise.all(promisedata).then(function () {
-            promiseCtrl.render();
+            promiseCtrl.render();	
+			
+			if (!promiseCtrl.map)
+			{return;}
+			
             promiseCtrl.map.updateStaticLayer();
         });
     }
@@ -480,6 +485,12 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
         
 		Promise.all(promisedata).then(function () {
             promiseCtrl.render();
+			
+			if (!promiseCtrl.map)
+			{
+				return;
+			}
+			
 			promiseCtrl.map.updateStaticLayer();
 			
         });
@@ -500,7 +511,6 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	AddedMapOption() {
 		this.panel.selectableMaps.push({ name: "Map " + this.panel.selectableMaps.length, map: this.mapOptions[0], forceReload: false });
 		this.map.updateStaticLayer();
-		console.log(this.panel.selectableMaps)
 	}
 
 	
@@ -513,7 +523,8 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     });
 
      function render() {
-      if (!ctrl.data) {
+	  
+      if (!ctrl.data) { 
         return;
       }
 
@@ -529,8 +540,10 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
       if (mapContainer[0].id.indexOf("{{") > -1) {
         return;
       }
+	  
 
       if (!ctrl.map) {
+		console.log("created map");
         const map = new PhasorMap(ctrl, mapContainer[0]);
         map.createMap();
         ctrl.map = map;

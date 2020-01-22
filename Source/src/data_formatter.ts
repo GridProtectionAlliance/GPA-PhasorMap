@@ -77,8 +77,11 @@ export default class DataFormatter {
 
             let requestURL = "../api/grafana/GetLocationData"
 
-            if (this.ctrl.panel.moveOverlap) {
-                requestURL = requestURL + "?radius=" + this.ctrl.panel.radiusOverlap + "&zoom=" + this.ctrl.map.map.getZoom();
+            if (this.ctrl.panel.moveOverlap) {				
+				if (this.ctrl.map)
+				{
+					requestURL = requestURL + "?radius=" + this.ctrl.panel.radiusOverlap + "&zoom=" + this.ctrl.map.map.getZoom()
+				}
             }
 
             $.ajax({
@@ -94,9 +97,12 @@ export default class DataFormatter {
 
             this.ctrl.series.forEach(point => {
                 let location;
+				
+				
                 if (this.ctrl.locations) {
+					
                     location = _.find(this.ctrl.locations,loc => {
-                        return loc.PointTag.toUpperCase() === point.target.toUpperCase();
+                        return ((loc.PointTag != null) && (loc.PointTag.toUpperCase() === point.target.toUpperCase()));
                     }); 
 
                 
