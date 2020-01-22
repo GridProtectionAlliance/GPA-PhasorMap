@@ -489,7 +489,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	ChangedMapOptions(map) {
 		// This is counterintuitive But Custom Layer will update the controll so this is important
 		map.forceReload = true;
-		this.map.updateStaticLayer();
+		map.updateStaticLayer();
 	}
 
 	RemovedMapOption(index) {
