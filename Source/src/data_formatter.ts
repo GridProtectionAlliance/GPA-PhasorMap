@@ -75,25 +75,21 @@ export default class DataFormatter {
                 locationrequest.push(datarequest);
             });
 
-            let requestURL = "../api/grafana/GetLocationData"
+            let query = { target: locationrequest, radius: null, zoom: null }
 
             if (this.ctrl.panel.moveOverlap) {				
 				if (this.ctrl.map)
 				{
-					requestURL = requestURL + "?radius=" + this.ctrl.panel.radiusOverlap + "&zoom=" + this.ctrl.map.map.getZoom()
+                    query.radius = this.ctrl.panel.radiusOverlap
+                    query.zoom = this.ctrl.map.map.getZoom()
 				}
             }
 
-            $.ajax({
-                type: "POST",
-                url: requestURL,
-                data: JSON.stringify(locationrequest),
-                contentType: "application/json",
-                dataType: "json",
-                success: res => {
-                    this.ctrl.locations = JSON.parse(res);
-                }
-            });
+            let ctrl = this.ctrl
+            this.ctrl.datasource.queryLocation(query).then(function (data) {
+                ctrl.locations = JSON.parse(data.data);
+            })
+            
 
             this.ctrl.series.forEach(point => {
                 let location;
