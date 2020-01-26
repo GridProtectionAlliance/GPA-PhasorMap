@@ -3,7 +3,7 @@ export default {
 	'CartoDB Positron': {
 		url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
 		attribution:
-			'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+			'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <br>' +
 			'&copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
 		subdomains: 'abcd',
 		maxZoom: 19,
@@ -11,7 +11,7 @@ export default {
 	'CartoDB Dark': {
 		url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
 		attribution:
-			'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+			'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> <br> ' +
 			'&copy; <a href="http://cartodb.com/attributions">CartoDB</a>',
 		subdomains: 'abcd',
 		maxZoom: 19.
@@ -24,10 +24,10 @@ export default {
 	},
 	'Open Topo Map': {
 		url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
-			'&copy; <a href="http://viewfinderpanoramas.org"> SRTM < /a>' +
-			'&copy; < a href="https://opentopomap.org"> OpenTopoMap < /a>' +
-			'&copy; (<a href="https://creativecommons.org/licenses/by-sa/3.0/"> CC - BY - SA < /a>)',
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> <br>' +
+			'&copy; <a href="http://viewfinderpanoramas.org"> SRTM </a> <br>' +
+			'&copy; <a href="https://opentopomap.org"> OpenTopoMap </a> <br>' +
+			'&copy; (<a href="https://creativecommons.org/licenses/by-sa/3.0/"> CC-BY-SA </a>)',
 		subdomains: 'abc',
 		maxZoom: 17,
 	},
