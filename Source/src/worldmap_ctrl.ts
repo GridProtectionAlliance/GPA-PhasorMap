@@ -61,6 +61,7 @@ const panelDefaults = {
     zoomSteps: 1,
     radiusOverlap: 10,
     moveOverlap: false,
+    filter: "",
 };
 
 const mapCenters = {
@@ -190,10 +191,10 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
       const data = [];
 
 		if (this.panel.locationData === "json endpoint") {
-			this.series = dataList;
+            this.series = this.filterData(dataList);
 			this.dataFormatter.setjsonendpoint(data);
       }  else if (this.panel.locationData === "OpenHistorian") {
-          this.series = dataList;
+            this.series = this.filterData(dataList);
           this.dataFormatter.setOpenHistorian(data);
         } 
 
@@ -202,6 +203,32 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	  console.log(err)
     }
   }
+
+    filterData(data) {
+
+        if (this.panel.filter == "") {
+            return data;
+        }
+
+        
+        let filter = this.panel.filter;
+        try {
+            filter = this.templateSrv.replace(this.panel.filter, this.panel.scopedVars, 'regex');
+        } catch (e) {
+            console.log('Map panel error: ', e);
+        }
+
+        let filtereddata: any[] = [];
+        let re = new RegExp(filter);
+
+        data.forEach(item => {
+            if (re.test(item.target)) {
+                filtereddata.push(item);
+            }
+        });
+        console.log(filtereddata)
+        return filtereddata
+    }
 
   centerOnLastGeoHash() {
     const last: any = _.last(this.data);
