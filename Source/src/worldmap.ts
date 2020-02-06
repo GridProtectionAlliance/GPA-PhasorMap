@@ -1,7 +1,10 @@
 import * as _ from 'lodash';
 import * as L from './libs/leaflet';
 import PhasorMapCtrl from './worldmap_ctrl';
-import tileServers from './Maps';
+//import Layer from "./Layer";
+//import { Map } from "./Maps"
+//import $ from "jquery";
+
 
 export default class PhasorMap {
 	ctrl: PhasorMapCtrl;
@@ -9,32 +12,51 @@ export default class PhasorMap {
     circles: any[];
     arrows: any[];
     map: any;
-    legend: any;
-    featuresLayer: any;
+	legend: any;
+
+    
     Controlledlayer: any;
     switchableLayer: any;
 	staticSeperateLayer: any;
-	backgroundlayer: any;
+
+	//### Layers ######
+    mapLayer: any; // Map Background
+    mapChanged: boolean;
+    controllLayer: any;
+
+    featureController: FeatureCtrl; // features
+
+	//Layer references
+
+
+	//backgroundlayer: any;
+
 	previousZoom: number;
 	ControlledMaps: any;
-	currentBackgroundLayerName: string;
+
+
 
     constructor(ctrl, mapContainer) {
         this.ctrl = ctrl;
-        this.mapContainer = mapContainer;
+		this.mapContainer = mapContainer;
+
         this.circles = [];
         this.arrows = [];
 		this.switchableLayer = {};
 		this.staticSeperateLayer = {};
 		this.previousZoom = 0;
 		this.ControlledMaps = {};
+
     }
 
-    createMap() {
+	createMap() {
+        this.mapChanged = false;
+
         const mapCenter = (<any>window).L.latLng(
             parseFloat(this.ctrl.panel.mapCenterLatitude),
             parseFloat(this.ctrl.panel.mapCenterLongitude)
-        );
+		);
+
         this.map = L.map(this.mapContainer, {
             worldCopyJump: true,
             preferCanvas: true,
@@ -44,506 +66,191 @@ export default class PhasorMap {
 			zoomDelta: parseFloat(this.ctrl.panel.zoomSteps) || 1
         });
 
+
         this.setMouseWheelZoom();
 
-		var selectedTileServer;
+        this.mapLayer = this.ctrl.mapData[0].getLayer(parseFloat(this.ctrl.panel.initialZoom) || 1).addTo(this.map);
+		
 
-		if (this.ctrl.panel.multiMaps) {
-			selectedTileServer = tileServers[this.ctrl.panel.selectableMaps[0].map];
-			this.ControlledMaps[this.ctrl.panel.selectableMaps[0].name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-				maxZoom: selectedTileServer.maxZoom,
-				subdomains: selectedTileServer.subdomains,
-				reuseTiles: true,
-				detectRetina: true,
-				attribution: selectedTileServer.attribution,
-			}).addTo(this.map);
-
-			this.backgroundlayer = this.ControlledMaps[this.ctrl.panel.selectableMaps[0].name];
-			this.currentBackgroundLayerName = this.ctrl.panel.selectableMaps[0].name;
-		}
-		else {
-			this.currentBackgroundLayerName = this.ctrl.tileServer;
-			selectedTileServer = tileServers[this.ctrl.tileServer];
-			
-			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
-				maxZoom: selectedTileServer.maxZoom,
-				subdomains: selectedTileServer.subdomains,
-				reuseTiles: true,
-				detectRetina: true,
-				attribution: selectedTileServer.attribution,
-			}).addTo(this.map);
-		}
-
-        this.Controlledlayer = L.control.layers(null).addTo(this.map);
+        //this.Controlledlayer = L.control.layers(null).addTo(this.map);
+        this.controllLayer = L.control.layers(null).addTo(this.map);
 
         //create new pane for overlays
         this.map.createPane('overlays');
         this.map.getPane('overlays').style.zIndex = 350;
         this.map.getPane('overlays').style.pointerEvents = 'none';
 
+        this.featureController = new FeatureCtrl(this);
 
-		this.map.on("zoomend", () => {
-			//if (this.map.getZoom() < 7.0 && this.previousZoom  >= 7.0)
-			//{
-			//	this.updateBaseLayer();
-			//}
-			//if (this.map.getZoom() >= 7.0 && this.previousZoom < 7.0) {
-			//	this.updateBaseLayer();
-			//}
-		this.previousZoom = this.map.getZoom();
-			this.drawFeatures();
-			console.log(this.previousZoom)
-            this.updateStaticLayer();
+        let ctrl = this;
 
-            if (this.ctrl.panel.moveOverlap && this.ctrl.panel.locationData === "OpenHistorian") {
-                this.ctrl.dataFormatter.setOpenHistorian([]);
-            }
+        this.map.on("zoomend", () => {
+            ctrl.ctrl.render();
+		//this.previousZoom = this.map.getZoom();
+			//this.drawFeatures();
+			//console.log(this.previousZoom)
+
+            //if (this.ctrl.panel.moveOverlap && this.ctrl.panel.locationData === "OpenHistorian") {
+            //    this.ctrl.dataFormatter.setOpenHistorian([]);
+            //}
 		});
 
 		this.map.on('baselayerchange', function (e) {
-			this.backgroundlayer = e.layer;
+			//update this and set the corresponding Layer
+            ctrl.mapLayer = e.layer;
 			console.log(e);
+			//Remove the new Layer and add the appropriate actual Layer
 		});
 
+        this.map.on('overlayadd', function (e) {
+            let layer = ctrl.ctrl.layerData.find(item => item.name === e.name);
+            if (layer) {
+                layer.isactive = true;
+            }
+
+        });
+
+        
 
     }
 
-    updateStaticLayer() {
-        this.clearStaticLayer();
-        this.updateControlledLayer();
 
-		this.staticSeperateLayer = {};
-		
-		
-		if (this.ctrl.customlayerData) {
-			this.ctrl.panel.customlayers.forEach(layer => {
-				if (this.ctrl.customlayerData[layer.name]) {
-					if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "geojson") {
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.staticSeperateLayer[layer.name] = L.geoJSON(this.ctrl.customlayerData[layer.name].data, {
-								pane: 'overlays',
-								style: function (feature) {
-									let result = {};
-									if (feature.properties.stroke) {
-										result["color"] = feature.properties.stroke;
-										result["stroke"] = true;
-									}
-									if (feature.properties.weight) {
-										result["weight"] = feature.properties.weight;
-										result["stroke"] = true;
-									}
-									if (feature.properties.fillColor) {
-										result["fillColor"] = feature.properties.fillColor;
-										result["fill"] = true;
-									}
+	// Deal with overlays....
+	// 1) Load Data
+	// 2) Display them as neccesarry
+	RedrawOverlays() {
 
-									if (feature.properties.hasOwnProperty('fillOpacity')) {
-										result["fillOpacity"] = feature.properties.fillOpacity;
-										result["fill"] = true;
+		if (this.ctrl.panel.customlayers.length == 0)
+			return;
 
-										if (feature.properties.fillOpacity === 0) {
-											result['fill'] = false;
-										}
-									}
-
-									return result;
-
-								}
-							}).addTo(this.map);
-						}
-
-					}
-					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "geojson") {
-						if (this.switchableLayer[layer.name]) {
-							this.switchableLayer[layer.name].clearLayers();
-							if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-								this.switchableLayer[layer.name].addData(this.ctrl.customlayerData[layer.name].data);
-							}
-						}
-						else {
-							//this is a single point to make sure the layer still gets on the control
-							let cleanData = {
-								"type": "FeatureCollection",
-								"features": [
-									{
-										"type": "Feature",
-										"properties": {},
-										"geometry": {
-											"type": "Point",
-											"coordinates": [
-												14.0625,
-												77.157162522661
-											]
-										}
-									}
-								]
-							};
-
-							if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-								cleanData = this.ctrl.customlayerData[layer.name].data;
-							}
-
-							this.switchableLayer[layer.name] = L.geoJSON(cleanData, {
-								pane: 'overlays',
-								style: function (feature) {
-									let result = {};
-
-									if (feature.properties.stroke) {
-										result["color"] = feature.properties.stroke;
-										result["stroke"] = true;
-									}
-									if (feature.properties.weight) {
-										result["weight"] = feature.properties.weight;
-										result["stroke"] = true;
-									}
-									if (feature.properties.fillcolor) {
-										result["fillColor"] = feature.properties.fillcolor;
-										result["fill"] = true;
-									}
-									if (feature.properties.hasOwnProperty('fillOpacity')) {
-										result["fillOpacity"] = feature.properties.fillOpacity;
-										result["fill"] = true;
-										if (feature.properties.fillOpacity === 0) {
-											result['fill'] = false;
-										}
-									}
-
-									return result;
-
-								}
-							}).addTo(this.map);
-						}
-
-					}
-					else if (!layer.usercontrolled && layer.type == "wms") {
-
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.staticSeperateLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
-								transparent: true,
-								layers: this.ctrl.customlayerData[layer.name].layer,
-								format: 'image/png',
-								opacity: this.ctrl.customlayerData[layer.name].oppacity,
-								pane: 'overlays'
-							}).addTo(this.map);
-						}
-					}
-					else if (layer.type == "wms") {
-
-						if (!this.switchableLayer[layer.name]) {
-
-							this.switchableLayer[layer.name] = L.tileLayer.wms(this.ctrl.customlayerData[layer.name].link, {
-								transparent: true,
-								layers: this.ctrl.customlayerData[layer.name].layer,
-								format: 'image/png',
-								opacity: this.ctrl.customlayerData[layer.name].oppacity,
-								pane: 'overlays'
-							}).addTo(this.map);
-
-
-						}
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.switchableLayer[layer.name].setOpacity(this.ctrl.customlayerData[layer.name].oppacity);
-						} else {
-							this.switchableLayer[layer.name].setOpacity(0.0);
-						}
-
-
-					}
-
-					else if (!layer.usercontrolled && layer.type == "tile") {
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.staticSeperateLayer[layer.name] = L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
-								reuseTiles: true,
-								detectRetina: true,
-								opacity: this.ctrl.customlayerData[layer.name].oppacity,
-								pane: 'overlays'
-							}).addTo(this.map);
-						}
-
-					}
-					else if (layer.type == "tile") {
-
-						if (!this.switchableLayer[layer.name]) {
-
-							this.switchableLayer[layer.name] = L.tileLayer(this.ctrl.customlayerData[layer.name].link, {
-								reuseTiles: true,
-								detectRetina: true,
-								opacity: this.ctrl.customlayerData[layer.name].oppacity,
-								pane: 'overlays'
-							});
-
-						}
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.switchableLayer[layer.name].setOpacity(this.ctrl.customlayerData[layer.name].oppacity);
-						} else {
-							this.switchableLayer[layer.name].setOpacity(0.0);
-						}
-					}
-					else if (this.ctrl.customlayerData[layer.name].data && !layer.usercontrolled && layer.type == "text") {
-						if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-							this.staticSeperateLayer[layer.name] = this.addText(this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data)).addTo(this.map);
-						}
-					}
-					else if (this.ctrl.customlayerData[layer.name].data && layer.type == "text") {
-						if (this.switchableLayer[layer.name]) {
-							this.switchableLayer[layer.name].clearLayers();
-
-							if (this.map.getZoom() > layer.minZoom && this.map.getZoom() < layer.maxZoom) {
-								this.CreateTextLayer(this.ctrl.customlayerData[layer.name].data).forEach(item => {
-
-									this.switchableLayer[layer.name].addLayer(item);
-							});
-							}
-							else {
-								this.switchableLayer[layer.name].addLayer(this.CreateTextLayer([{ "Text": "", "Longitude": -84.899707, "Latitude": 34.759979 }])[0]);
-							}
-						}
-						else {
-							this.switchableLayer[layer.name] = this.addText(this.CreateTextLayer([{ "Text": "", "Longitude": -84.899707, "Latitude": 34.759979 }]));
-						}
-					}
-					else { console.log(this.ctrl.customlayerData[layer.name])}
-
-				}
-			});
-
-
-			if (this.ctrl.panel.multiMaps) {
-				this.updateControlledMaps();
-
-				this.ctrl.panel.selectableMaps.forEach(item => {
-					if (!this.ControlledMaps[item.name]) {
-						//Special Case if this is the only map it has to be added enabled
-						// Occurs when changing map in multi map but only one map option
-						
-						let selectedTileServer = tileServers[item.map];
-
-						if (this.ctrl.panel.selectableMaps.length == 1) {
-							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-								maxZoom: selectedTileServer.maxZoom,
-								subdomains: selectedTileServer.subdomains,
-								reuseTiles: true,
-								detectRetina: true,
-								attribution: selectedTileServer.attribution,
-							}).addTo(this.map);
-						}
-						else {
-							this.ControlledMaps[item.name] = (<any>window).L.tileLayer(selectedTileServer.url, {
-								maxZoom: selectedTileServer.maxZoom,
-								subdomains: selectedTileServer.subdomains,
-								reuseTiles: true,
-								detectRetina: true,
-								attribution: selectedTileServer.attribution,
-							});
-						}
-					
-					}
-				});
-			}
-
-			
-			if (Object.keys(this.switchableLayer).length > 0 && (!this.ctrl.panel.multiMaps || Object.keys(this.ControlledMaps).length == 1)) {
-				this.Controlledlayer = L.control.layers(null, this.switchableLayer, { collapsed: false }).addTo(this.map);
-			}
-			else if (Object.keys(this.switchableLayer).length == 0 && this.ctrl.panel.multiMaps && Object.keys(this.ControlledMaps).length > 1) {
-				this.Controlledlayer = L.control.layers(this.ControlledMaps, null, { collapsed: false }).addTo(this.map);
-			}
-			else if (this.ctrl.panel.multiMaps && Object.keys(this.ControlledMaps).length > 1) {
-				this.Controlledlayer = L.control.layers(this.ControlledMaps, this.switchableLayer, { collapsed: false }).addTo(this.map);
-			}
-
-			this.SortLayerZindex();
-
-			
-        }
-    }
-
-	CreateTextLayer(data) {
-		let result: any[] = [];
-		data.forEach(item => {
-			let txt = item.Text;
-
-		while (txt.search(/\[.*\]/g) !== -1) {
-			let tag = txt.match(/\[([^\]]*>?[^\]]*)\]/);
-			
-			let pointtag = tag[1];
-			let str = '[' + pointtag + ']'
-			let formatstring = "";
-
-			if (pointtag.search(/>/g) !== -1) {
-				let lst = pointtag.split(">");
-				pointtag = lst[0];
-				formatstring = lst[1];
-			}
-
-			let index = _.find(this.ctrl.data, item => {
-				return item.key === pointtag;
-			});
-
-			if (index && index.hasOwnProperty('value')) {
-				if (formatstring !== "") {
-					txt = txt.replace(str, index.value.toFixed(parseInt(formatstring)));
-				}
-				else {
-					txt = txt.replace(str, index.value);
-				}
-				
-			}
-			else {
-				txt = txt.replace(str, '');
-			}
-			}
-
-			let myIcon = L.divIcon({
-				html: txt,
-				iconSize: [30, 10],
-				iconAnchor: [15, 0] });
-			let marker = L.marker([item.Latitude, item.Longitude], { icon: myIcon });
-
-			result.push(marker);
+		let promise: any[] = []
+        this.ctrl.layerData.forEach(layer => {
+			promise.push(layer.getData())
 		});
 
-		return result;
+		let ctrl = this;
+
+        console.log(promise)
+       
+        Promise.all(promise).then(function () {
+            ctrl.map.off('overlayremove');
+
+            ctrl.ctrl.layerData.forEach(layer => {
+				// Remove all updatedLayer
+				let addLayer: boolean = false;
+                
+
+                if (layer.layer != null) {
+                    if (layer.dynamic || layer.changed) {
+                        
+                        ctrl.map.removeLayer(layer.layer);
+                        layer.updateLayer();
+                        //check zoomLevel
+                        addLayer = true;
+                        if (layer.parameters.minZoom && layer.parameters.minZoom > ctrl.map.getZoom()) {
+                            addLayer = false;
+                        }
+                        if (layer.parameters.maxZoom && layer.parameters.maxZoom < ctrl.map.getZoom()) {
+                            addLayer = false;
+                        }
+                    }
+                }
+
+                if (layer.layer == null) {
+                    layer.updateLayer();
+
+                    //check zoomLevel
+                    addLayer = true;
+                    if (layer.parameters.minZoom && layer.parameters.minZoom > ctrl.map.getZoom()) {
+                        addLayer = false;
+                    }
+                    if (layer.parameters.maxZoom && layer.parameters.maxZoom < ctrl.map.getZoom()) {
+                        addLayer = false;
+                    }
+                }
+
+                if (addLayer && layer.isactive) {
+
+                    layer.layer.addTo(ctrl.map)
+                }
+               
+			})
+
+            ctrl.SortOverlays()
+            ctrl.PopulateControl()
+            
+        
+        })
+
 	}
 
-	SortLayerZindex() {
+    PopulateControl() {
+
+        let ctrl = this;
+        this.controllLayer.remove();
+
+        this.map.on('overlayremove', function (e) {
+            let layer = ctrl.ctrl.layerData.find(item => item.name === e.name);
+
+            if (layer) {
+                layer.isactive = false;
+            }
+        });
+        
+
+
+        let userLayers = {};
+
+        this.ctrl.layerData.forEach(layer => {
+
+            let addlayer = false;
+            if (layer.user) {
+                addlayer = true;
+                if (layer.parameters.minZoom && layer.parameters.minZoom > this.map.getZoom()) {
+                    addlayer = false;
+                }
+                if (layer.parameters.maxZoom && layer.parameters.maxZoom < this.map.getZoom()) {
+                    addlayer = false;
+                }
+            }
+            if (addlayer) {
+                userLayers[layer.name] = layer.layer;
+            }
+
+        })
+
+
+        this.controllLayer = L.control.layers(null, userLayers, { collapsed: false, hideSingleBase: true }).addTo(this.map);
+    }
+
+
+    SortOverlays() {
 		//Sort all the layers by z-index (lower = lower on the map....)
 
-		let keystoSort: any[] = [];
+		let keysToSort: any[] = [];
 		
 
-		for (let key in this.switchableLayer) {
-			let index = _.find(this.ctrl.panel.customlayers, item => {
-				return item.name === key;
-			});
-			if (index.type === 'text') { }
+        this.ctrl.layerData.forEach(layer => {
+			
+			if (layer.type === 'text') { }
 			else {
-				keystoSort.push({ name: key, zIndex: index.zIndex });
+                keysToSort.push({ layer: layer.layer, zIndex: parseInt(layer.parameters.zIndex) });
 			}
-		}
+		})
 		
-		for (let key in this.staticSeperateLayer) {
-			let index = _.find(this.ctrl.panel.customlayers, item => {
-				return item.name === key;
-			});
-			if (index.type === 'text') { }
-			else {
-				keystoSort.push({ name: key, zIndex: index.zIndex });
-			}
-		}
-
-		keystoSort.sort(this.sortFunc);
+		
+        keysToSort.sort(function (a, b) { return a.zIndex - b.zIndex; });
 
 	
 
 		//Map Layers accoring to zIndex
-		let i;
-		for (i = 0; i < keystoSort.length; i++) {
-			if (this.staticSeperateLayer[keystoSort[i].name]) {
-				this.staticSeperateLayer[keystoSort[i].name].bringToFront();
-			}
-			else {
-				this.switchableLayer[keystoSort[i].name].bringToFront();
-			}
+        keysToSort.forEach(layer => {
+            layer.layer.bringToFront();
+        });
 
-		}
-
-		// Data Layer will always be on top
 	}
 
-	sortFunc(a, b) {
-		 
-		return parseInt(a.zIndex) - parseInt(b.zIndex);
-	}
-
-	clearStaticLayer() {
-        
-		for (let key in this.staticSeperateLayer) {
-			this.map.removeLayer(this.staticSeperateLayer[key]);
-		}
-
-        this.Controlledlayer.remove();
-
-    }
-
-    updateControlledLayer() {
-
-        let keysToDelete: string[] = [];
-
-		for (let key in this.switchableLayer) {
-			if ((this.ctrl.customlayerData[key]) && (this.ctrl.customlayerData[key].usercontrolled) && (!this.ctrl.customlayerData[key].forceReload)) {
-				this.ctrl.customlayerData[key].forceReload = false;
-			}
-			else if (!this.ctrl.customlayerData[key]) {
-				keysToDelete.push(key);
-			}
-			else {
-				
-				keysToDelete.push(key);
-				this.ctrl.customlayerData[key].forceReload = false;
-            }
-        }
-
-		for (let key of keysToDelete) {
-			this.map.removeLayer(this.switchableLayer[key]);
-            delete this.switchableLayer[key];
-        }
-    }
-
-	updateControlledMaps() {
-		let keysToDelete: string[] = [];
-		
-		for (let key in this.ControlledMaps) {
-			let index = _.find(this.ctrl.panel.selectableMaps, item => {
-				return item.name === key;
-			});
-
-			if (index) {
-
-				if (!index.forceReload) {
-					index.forceReload = false;
-				}
-				else {
-					keysToDelete.push(key);
-					index.forceReload = false;
-				}
-			}
-			else {
-				keysToDelete.push(key);
-			}
-		}
-
-		for (let key of keysToDelete) {
-			this.map.removeLayer(this.ControlledMaps[key]);
-			delete this.ControlledMaps[key];
-		}
-	}
-
-	updateBaseLayer() {
-
-		if (!this.ctrl.panel.multiMap) {
-			this.currentBackgroundLayerName = this.ctrl.tileServer;
-			this.ControlledMaps = {};
-			var selectedTileServer;
-
-			this.backgroundlayer.remove(this.map);
-			
-
-			selectedTileServer = tileServers[this.ctrl.tileServer];
-
-
-			this.backgroundlayer = (<any>window).L.tileLayer(selectedTileServer.url, {
-                maxZoom: selectedTileServer.maxZoom,
-				subdomains: selectedTileServer.subdomains,
-				reuseTiles: true,
-				detectRetina: true,
-				attribution: selectedTileServer.attribution,
-			}).addTo(this.map);
-		}
-
-		this.updateStaticLayer();
-    }
-
+	
     createLegend() {
         this.legend = (<any>window).L.control({ position: 'bottomleft' });
         this.legend.onAdd = () => {
@@ -575,64 +282,42 @@ export default class PhasorMap {
         this.legend.addTo(this.map);
     }
 
-    needToRedrawFeatures(data) {
+    RedrawBaseLayer() {
+        if (!this.mapChanged)
+            return;
 
-        if (this.circles.length === 0 && data.length > 0 ) {
-            return true;
+        this.mapLayer.remove()
+
+        this.mapLayer = this.ctrl.mapData[0].getLayer(this.map.getZoom()).addTo(this.map);
+        this.mapChanged = false;
+
+        if (this.ctrl.mapData[0].maps[0] === "CartoDB Dark") {
+            this.ctrl.saturationClass = "map-darken";
+        } else {
+            this.ctrl.saturationClass = "";
         }
 
-        if (this.circles.length !== data.length) {
-            return true;
-        }
-
-        if (this.arrows.length !== this.circles.length && this.ctrl.panel.featureType === "phasor-clock") {
-            return true;
-        }
-
-        const locations = _.map(_.map(this.circles, 'options'), 'location').sort();
-        const dataPoints = _.map(data, 'key').sort();
-        return !_.isEqual(locations, dataPoints);
     }
 
-    filterEmptyAndZeroValues(data) {
-		return _.filter(data, o => {
-			return !(this.ctrl.panel.hideEmpty && _.isNil(o.value)) && !(this.ctrl.panel.hideZero && o.value === 0) && !(this.ctrl.panel.hideEmpty && Number.isNaN(o.value));
-        });
-    }
 
     drawFeatures() {
-        const data = this.filterEmptyAndZeroValues(this.ctrl.data);
-        if (this.needToRedrawFeatures(data)) {
-            this.clearFeatures();
-            this.createFeatures(data);
-        } else {
-            this.updateFeatures(data);
+
+        //Remove data layer
+        if (this.featureController.layer != null) {
+            this.featureController.layer.clearLayers()
+            this.map.removeLayer(this.featureController.layer);
         }
+        
+        if (this.ctrl.data.length == 0)
+            return;
+
+        //Add new data layer
+        this.featureController.getLayer(this.ctrl.data);
+        this.featureController.layer.addTo(this.map);
     }
 
-    createFeatures(data) {
-        if (this.ctrl.panel.featureType === "circles") {
-            this.createCircles(data);
-        }
-        else if (this.ctrl.panel.featureType === "phasor-clock") {
-            this.createClocks(data);
-        }
 
-    }
-
-    clearFeatures() {
-        if (this.featuresLayer) {
-            this.featuresLayer.clearLayers();
-
-            this.removeFeatures();
-            this.circles = [];
-            this.arrows = [];
-            this.featuresLayer = null;
-        }
-
-    }
-
-    updateFeatures(data) {
+    /*updateFeatures(data) {
         if (this.ctrl.panel.featureType === "circles") {
             this.updateCircles(data);
         }
@@ -668,36 +353,9 @@ export default class PhasorMap {
         });
     }
 
-    createCircles(data) {
-        const circles: any[] = [];
+    
 
-        data.forEach(dataPoint => {
-            if (!dataPoint.locationName) {
-                return;
-            }
-            if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
-            }
-            else {
-                circles.push(this.createCircle(dataPoint));
-            }
-
-        });
-        this.featuresLayer = this.addFeatures(circles);
-        this.circles = circles;
-    }
-
-    createCircle(dataPoint) {
-        const circle = (<any>window).L.circleMarker([dataPoint.locationLatitude, dataPoint.locationLongitude], {
-            radius: this.calcCircleSize(dataPoint.value || 0),
-            color: this.getColor(dataPoint.value),
-            fillColor: this.getColor(dataPoint.value),
-            fillOpacity: 0.5,
-            location: dataPoint.key,
-        });
-
-        this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded, dataPoint);
-        return circle;
-    }
+    
 
     //End Circle Section
 
@@ -781,20 +439,6 @@ export default class PhasorMap {
     }
     //End PhasporClock Section
 
-    calcCircleSize(dataPointValue) {
-        const circleMinSize = parseInt(this.ctrl.panel.circleMinSize, 10) || 2;
-        const circleMaxSize = parseInt(this.ctrl.panel.circleMaxSize, 10) || 30;
-
-        if (this.ctrl.data.valueRange === 0) {
-            return circleMaxSize;
-        }
-
-        const dataFactor = (dataPointValue - this.ctrl.data.lowestValue) / this.ctrl.data.valueRange;
-        const circleSizeRange = circleMaxSize - circleMinSize;
-
-        return circleSizeRange * dataFactor + circleMinSize;
-    }
-
     createPopup(circle, locationName, value, point) {
         let label;
 
@@ -838,14 +482,6 @@ export default class PhasorMap {
         }
     }
 
-    getColor(value) {
-        for (let index = this.ctrl.data.thresholds.length; index > 0; index -= 1) {
-            if (value >= this.ctrl.data.thresholds[index - 1]) {
-                return this.ctrl.panel.colors[index];
-            }
-        }
-        return _.first(this.ctrl.panel.colors);
-    }
 
     getSecondaryColor(value) {
         for (let index = this.ctrl.data.secondarythresholds.length; index > 0; index -= 1) {
@@ -854,7 +490,7 @@ export default class PhasorMap {
             }
         }
         return _.first(this.ctrl.panel.secondarycolors);
-    }
+    } */
 
     resize() {
         this.map.invalidateSize();
@@ -878,35 +514,302 @@ export default class PhasorMap {
         }
     }
 
-    addFeatures(layers) {
-        return (<any>window).L.layerGroup(layers).addTo(this.map);
-	}
-
-	addText(layers) {
-		return (<any>window).L.layerGroup(layers, { pane: 'overlays' });
-	}
-    removeFeatures() {
-        this.map.removeLayer(this.featuresLayer);
-        this.featuresLayer = null;
-        
-    }
 
     setZoom(zoomFactor) {
 		this.map.setZoom(parseFloat(zoomFactor));
     }
 
     remove() {
-        this.circles = [];
-        this.arrows = [];
-
-        if (this.featuresLayer) {
-            this.removeFeatures();
+        if (this.featureController.layer != null) {
+            this.featureController.layer.clearLayers()
+            this.map.removeLayer(this.featureController.layer);
         }
+
         if (this.legend) {
             this.removeLegend();
-
+        }
             
-            this.map.remove();
-        } 
+        this.map.remove();
+         
+    }
+}
+
+class FeatureCtrl {
+    ctrl: PhasorMap;
+    layer: any;
+    data: any;
+
+    constructor(src: PhasorMap) {
+        this.ctrl = src;
+        this.layer = null;
+        this.data = null;
+    }
+
+    getLayer(data) {
+
+        let filtData = this.filterData(data);
+        let layers: any[] = [];
+
+        if (this.ctrl.ctrl.panel.featureType === "circles") {
+            layers = this.createCircles(filtData);
+        }
+
+        else if (this.ctrl.ctrl.panel.featureType === "phasor-clock") {
+            console.log("not implemented yet")
+        }
+
+        else if (this.ctrl.ctrl.panel.featureType === "4-bit bar") {
+            layers = this.createRecatangle(filtData)
+        }
+
+
+        this.layer = (<any>window).L.layerGroup(layers);
+    }
+
+    filterData(data) {
+        let result = this.filterEmptyAndZeroValues(data);
+        result = this.ctrl.ctrl.filterData(result);
+        return result;
+    }
+
+    filterEmptyAndZeroValues(data) {
+        return _.filter(data, o => {
+            return !(this.ctrl.ctrl.panel.hideEmpty && _.isNil(o.value)) &&
+                !(this.ctrl.ctrl.panel.hideZero && o.value === 0) &&
+                !(this.ctrl.ctrl.panel.hideEmpty && Number.isNaN(o.value));
+        });
+    }
+
+   
+    // ##### Feature Functions #####
+
+    // #### Circles ####
+    createCircles(data) {
+        let results: any[] = [];
+
+        data.forEach(dataPoint => {
+            
+            if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
+                // Can not do this without Location name
+            }
+            else {
+                let circle = (<any>window).L.circleMarker([dataPoint.locationLatitude, dataPoint.locationLongitude], {
+                    radius: this.calcCircleSize(dataPoint.value || 0),
+                    color: this.getColor(dataPoint.value, 0),
+                    fillColor: this.getColor(dataPoint.value, 0),
+                    fillOpacity: 0.5,
+                });
+                results.push(circle);
+
+                circle.closePopup();
+                circle.unbindPopup();
+
+                if (this.ctrl.ctrl.panel.dataLabels) {
+                    this.createPopup(circle, dataPoint);
+                }
+            }
+
+        });
+
+       
+
+
+        //this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded, dataPoint);
+        return results;        
+    }
+
+    calcCircleSize(dataPointValue) {
+        const circleMinSize = parseInt(this.ctrl.ctrl.panel.feature.circleMinSize, 10) || 2;
+        const circleMaxSize = parseInt(this.ctrl.ctrl.panel.feature.circleMaxSize, 10) || 30;
+
+        if (this.ctrl.ctrl.data.valueRange === 0) {
+            return circleMaxSize;
+        }
+
+        const dataFactor = (dataPointValue - this.ctrl.ctrl.data.lowestValue) / this.ctrl.ctrl.data.valueRange;
+        const circleSizeRange = circleMaxSize - circleMinSize;
+
+        return circleSizeRange * dataFactor + circleMinSize;
+    }
+
+    getColor(value, colorindex) {
+        let threshholds = this.ctrl.ctrl.panel.feature.thresholds[colorindex].split(",").map(item => parseInt(item, 10))
+
+        for (let index = threshholds.length; index > 0; index -= 1) {
+            if (value >= threshholds[index - 1]) {
+                return this.ctrl.ctrl.panel.feature.colors[colorindex][index];
+            }
+        }
+        return _.first(this.ctrl.ctrl.panel.feature.colors[colorindex]);
+    }
+
+    
+
+    // #### Clocks ####
+
+    // #### Bars ####
+    createRecatangle(data) {
+        let results: any[] = [];
+
+        data.forEach(dataPoint => {
+
+            if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
+                // Can not do this without Location name
+            }
+            else {
+
+                var latlng = (<any>window).L.latLng(dataPoint.locationLatitude, dataPoint.locationLongitude);
+                let point1 = this.ctrl.map.project(latlng, this.ctrl.map.getZoom())
+                let point2 = this.ctrl.map.project(latlng, this.ctrl.map.getZoom())
+
+                point2.x = point1.x + 0.5 * this.ctrl.ctrl.panel.feature.width;
+                point2.y = point1.y - 0.5 * this.ctrl.ctrl.panel.feature.height;
+
+                point1.x = point1.x - 0.5 * this.ctrl.ctrl.panel.feature.width;
+                point1.y = point1.y + 0.5 * this.ctrl.ctrl.panel.feature.height;
+
+                
+                let pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
+                let pt2 = this.ctrl.map.unproject(point2, this.ctrl.map.getZoom());
+
+                let rect = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+                    color: this.ctrl.ctrl.panel.feature.colors[0][0],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][0],
+                    fillOpacity: 0.8,
+
+                });
+
+                let invrect = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+                    fillOpacity: 0.0,
+                    stroke: false,
+                });
+
+                //create all four bars (active for now)
+                let hbar = this.ctrl.ctrl.panel.feature.height - 8;
+                let wbar = Math.floor((this.ctrl.ctrl.panel.feature.width - 8 - 6) / 4.0);
+
+                let point3 = this.ctrl.map.project(latlng, this.ctrl.map.getZoom());
+                point1.x = point1.x + 4;
+                point1.y = point1.y - 4;
+
+                point3.y = point1.y - hbar;
+                point3.x = point1.x + wbar;
+                pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
+                pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
+
+                let bit1 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+                    color: this.ctrl.ctrl.panel.feature.colors[0][0],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][1],
+                    fillOpacity: 1.0,
+                    weight: 2.0
+                });
+
+                point1.x = point3.x + 2;
+                point3.x = point1.x + wbar;
+
+                pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
+                pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
+
+                let bit2 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+                    color: this.ctrl.ctrl.panel.feature.colors[0][0],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][2],
+                    fillOpacity: 1.0,
+                    weight: 2.0
+                });
+
+                point1.x = point3.x + 2;
+                point3.x = point3.x + 2 + wbar;
+
+                pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
+                pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
+
+                let bit3 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+                    color: this.ctrl.ctrl.panel.feature.colors[0][0],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][1],
+                    fillOpacity: 1.0,
+                    weight: 2.0
+                });
+
+                point1.x = point3.x + 2;
+                point3.x = point1.x + 2 + wbar;
+
+                pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
+                pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
+
+                let bit4 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
+                    color: this.ctrl.ctrl.panel.feature.colors[0][0],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][1],
+                    fillOpacity: 1.0,
+                    weight: 2.0
+                });
+
+                results.push(rect);
+                results.push(bit1);
+                results.push(bit2);
+                results.push(bit3);
+                results.push(bit4);
+                results.push(invrect)
+
+                
+                invrect.closePopup();
+                invrect.unbindPopup();
+
+                if (this.ctrl.ctrl.panel.dataLabels) {
+                    this.createPopup(invrect, dataPoint);
+                }
+            }
+
+        });
+
+
+
+
+        //this.createPopup(circle, dataPoint.locationName, dataPoint.valueRounded, dataPoint);
+        return results;
+    }
+
+
+    // #### Popups ####
+
+    createPopup(circle, point) {
+        let label;
+
+        label = this.ctrl.ctrl.panel.popupstring;
+        label = label.replace(/{value}/gi, point.value);
+        label = label.replace(/{deviceID}/gi, point.deviceId);
+        label = label.replace(/{PointTag}/gi, point.PointTag);
+        label = label.replace(/{deviceName}/gi, point.deviceName);
+
+        console.log()
+        if (this.ctrl.ctrl.panel.stickyLabels && this.ctrl.ctrl.panel.constantLabels) {
+            circle.bindPopup(label, {
+                offset: (<any>window).L.point(0, -2),
+                className: 'worldmap-popup',
+                closeButton: false,
+                autoClose: false,
+                closeOnClick: false,
+                closeOnEscapeKey: false,
+            }).openPopup();
+        }
+        else {
+            circle.bindPopup(label, {
+                offset: (<any>window).L.point(0, -2),
+                className: 'worldmap-popup',
+                closeButton: this.ctrl.ctrl.panel.stickyLabels,
+            });
+        }
+
+
+        circle.on('mouseover', function onMouseOver(evt) {
+            const layer = evt.target;
+            layer.bringToFront();
+            this.openPopup();
+        });
+
+        if (!this.ctrl.ctrl.panel.stickyLabels) {
+            circle.on('mouseout', function onMouseOut() {
+                circle.closePopup();
+            });
+        }
     }
 }

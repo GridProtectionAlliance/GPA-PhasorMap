@@ -1,5 +1,122 @@
+//import * as L from './libs/leaflet';
+import PhasorMapCtrl from './worldmap_ctrl';
+export { mapOptions }
 
-export default {
+export default class Map {
+	ctrl: PhasorMapCtrl;
+	user: boolean;
+	isactive: boolean;
+	name: string;
+	maps: any[];
+	transitions: number[];
+	maxZoom: number;
+
+
+	constructor(ctrl: PhasorMapCtrl, name: string, param: any, isUser?: boolean) {
+		this.ctrl = ctrl;
+		this.user = (isUser == undefined) ? false : isUser;
+		this.isactive = (this.user) ? false : true;
+		this.name = name;
+
+		this.maps = [];
+		this.transitions = [];
+		this.maxZoom = 1.0;
+
+	}
+
+	addMap(map: string, zoom: number) {
+		this.maps.push(map);
+		this.transitions.push(zoom);
+
+		this.updateMap();
+	}
+
+	deleteMap(map: string) {
+		let index = this.maps.indexOf(map);
+		if (index > -1) {
+			this.maps.splice(index, 1) 
+		}
+
+		this.updateMap();
+	}
+
+	updateMap() {
+		//sort properly
+		let temp: any[] = [];
+		this.maps.forEach((item, index) => {
+			console.log(item)
+			temp.push({ map: item, transition: Math.min(this.transitions[index], mapOptions[item].maxZoom) })
+		});
+
+		temp.sort((a, b) => (a.transition > b.transition) ? 1 : ((b.transition > a.transition) ? -1 : 0));
+
+		this.maps = temp.map(item => item.map);
+		this.transitions = temp.map(item => item.transition);
+
+		// set absolute minimum zoom => last map
+		this.maxZoom = mapOptions[this.maps[this.maps.length - 1]].maxZoom;
+	}
+
+	getLayer(zoom: number) {
+		let map = this.maps[this.getMap(zoom)];
+
+		return  (<any>window).L.tileLayer(mapOptions[map].url, {
+			maxZoom: this.maxZoom,
+			subdomains: mapOptions[map].subdomains,
+			reuseTiles: true,
+			detectRetina: true,
+			attribution: mapOptions[map].attribution,
+		})
+
+	}
+
+	//update Map
+	getMap(zoom: number) {
+
+		return 0;
+
+	}
+
+	// Serialize Maps for Json Storage
+	// This is neccesarry because Grafana is stupid....
+	Serialize() {
+		let result = {
+			user: this.user,
+			name: this.name,
+			maps: this.maps,
+			transitions: this.transitions,
+			maxZoom: this.maxZoom
+		};
+
+		return result;
+	}
+
+	static Deserialize(ctrl, jsonobject) {
+		let result = new Map(ctrl, "", {}, false)
+
+		if (jsonobject.user) {
+			result.user = jsonobject.user
+		}
+		if (jsonobject.transitions) {
+			result.transitions = jsonobject.transitions
+		}
+		if (jsonobject.name) {
+			result.name = jsonobject.name
+		}
+		if (jsonobject.maps) {
+			result.maps = jsonobject.maps
+		}
+		if (jsonobject.maxZoom) {
+			result.maxZoom = jsonobject.maxZoom
+		}
+
+		return result;
+	}
+
+}
+
+
+var mapOptions = {
 	'CartoDB Positron': {
 		url: 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
 		attribution:
@@ -49,7 +166,27 @@ export default {
 		maxZoom: 13,
 		subdomains: 'r',
 	},
+
+	'Stamen Toner': {
+		url: 'http://til{s}.stamen.com/toner/{z}/{x}/{y}.png',
+		attribution: 'tiles by Stamen Design, under CC BY 3.0. <br> Data by OpenStreetMap, under ODbL.',
+		maxZoom: 13,
+		subdomains: 'e',
+	},
+
+	'Stamen Terrain': {
+		url: 'http://til{s}.stamen.com/terrain/{z}/{x}/{y}.jpg',
+		attribution: 'Tiles by Stamen Design, under CC BY 3.0. <br> Data by OpenStreetMap, under ODbL.',
+		maxZoom: 13,
+		subdomains: 'e',
+	},
+
+	'Stamen Watercolor': {
+		url: 'http://til{s}.stamen.com/watercolor/{z}/{x}/{y}.jpg',
+		attribution: 'Map tiles by Stamen Design, under CC BY 3.0.<br> Data by OpenStreetMap, under CC BY SA',
+		maxZoom: 13,
+		subdomains: 'e',
+	},
+
 	
-
 }
-
