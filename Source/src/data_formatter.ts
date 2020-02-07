@@ -242,12 +242,6 @@ export default class DataFormatter {
 
         this.ctrl.data = data;
 
-        let i;
-        for (i = 0; i < this.ctrl.panel.colors.length; i++) {
-            this.ctrl.updateThresholdData(i);
-        }
-        
-
     }
 
 
