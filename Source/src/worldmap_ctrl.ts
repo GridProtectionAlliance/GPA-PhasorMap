@@ -357,7 +357,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     }
 
     RemoveCustomLayer(id) {
-        this.panel.customlayers.splice(id, 1);
+        this.layerData.splice(id, 1);
         this.panel.customlayers = this.layerData.map(item => item.Serialize());
         this.render();
     }
