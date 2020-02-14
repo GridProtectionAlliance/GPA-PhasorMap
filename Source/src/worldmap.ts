@@ -697,9 +697,11 @@ class FeatureCtrl {
                 pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
                 pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
 
+                let cindex = ((dataPoint.value & 1)) == 1 ? 1 : 2
+
                 let bit1 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
                     color: this.ctrl.ctrl.panel.feature.colors[0][0],
-                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][1],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][cindex],
                     fillOpacity: 1.0,
                     weight: 2.0
                 });
@@ -710,9 +712,11 @@ class FeatureCtrl {
                 pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
                 pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
 
+                cindex = ((dataPoint.value & 2)) == 1 ? 1 : 2
+
                 let bit2 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
                     color: this.ctrl.ctrl.panel.feature.colors[0][0],
-                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][2],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][cindex],
                     fillOpacity: 1.0,
                     weight: 2.0
                 });
@@ -723,9 +727,11 @@ class FeatureCtrl {
                 pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
                 pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
 
+                cindex = ((dataPoint.value & 4)) == 1 ? 1 : 2
+
                 let bit3 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
                     color: this.ctrl.ctrl.panel.feature.colors[0][0],
-                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][1],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][cindex],
                     fillOpacity: 1.0,
                     weight: 2.0
                 });
@@ -736,9 +742,11 @@ class FeatureCtrl {
                 pt1 = this.ctrl.map.unproject(point1, this.ctrl.map.getZoom());
                 pt2 = this.ctrl.map.unproject(point3, this.ctrl.map.getZoom());
 
+                cindex = ((dataPoint.value & 8)) == 1 ? 1 : 2
+
                 let bit4 = (<any>window).L.rectangle([[pt1.lat, pt1.lng], [pt2.lat, pt2.lng]], {
                     color: this.ctrl.ctrl.panel.feature.colors[0][0],
-                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][1],
+                    fillColor: this.ctrl.ctrl.panel.feature.colors[0][cindex],
                     fillOpacity: 1.0,
                     weight: 2.0
                 });
