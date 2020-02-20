@@ -316,7 +316,7 @@ export default class PhasorMap {
             this.map.removeLayer(this.featureController.layer);
         }
         
-        if (this.ctrl.data.length == 0)
+        if (this.ctrl.data.data.length == 0)
             return;
 
         //Add new data layer
@@ -555,7 +555,7 @@ class FeatureCtrl {
 
     getLayer(data) {
 
-        let filtData = this.filterData(data);
+        let filtData = this.filterData(data.data);
         let layers: any[] = [];
 
         if (this.ctrl.ctrl.panel.featureType === "circles") {
@@ -575,6 +575,7 @@ class FeatureCtrl {
     }
 
     filterData(data) {
+        
         let result = this.filterEmptyAndZeroValues(data);
         result = this.ctrl.ctrl.filterData(result);
         return result;
@@ -594,7 +595,7 @@ class FeatureCtrl {
     // #### Circles ####
     createCircles(data) {
         let results: any[] = [];
-
+        
         data.forEach(dataPoint => {
             
             if ((!dataPoint.locationLatitude) || (!dataPoint.locationLongitude)) {
@@ -796,7 +797,6 @@ class FeatureCtrl {
         label = label.replace(/{PointTag}/gi, point.PointTag);
         label = label.replace(/{deviceName}/gi, point.deviceName);
 
-        console.log()
         if (this.ctrl.ctrl.panel.stickyLabels && this.ctrl.ctrl.panel.constantLabels) {
             circle.bindPopup(label, {
                 offset: (<any>window).L.point(0, -2),

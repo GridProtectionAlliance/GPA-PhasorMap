@@ -79,7 +79,8 @@ const mapCenters = {
 
 export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	static templateUrl = "partials/module.html";
-    mapOptions = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap Mapnik', 'Esri NatGeo', 'Esri WorldShaded', 'Esri WorldPhysical', 'Stamen Toner', 'Stamen Terrain','Stamen Watercolor'];
+    mapOptions = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap Mapnik', 'Esri NatGeo', 'Esri WorldShaded', 'Esri WorldPhysical', 'Stamen Toner', 'Stamen Terrain', 'Stamen Watercolor'];
+    SingleMapOptions = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap Mapnik', 'Esri NatGeo', 'Esri WorldShaded', 'Esri WorldPhysical', 'Stamen Toner', 'Stamen Terrain', 'Stamen Watercolor', 'custom'];
 
     dataFormatter: DataFormatter;
     locations: any;
@@ -128,9 +129,18 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
     setNewMapBackground() {
 
         this.mapData[0].maps = [];
-        this.mapData[0].transitions = [];
-        this.mapData[0].addMap(this.panel.mapBackground, 100);
-        this.mapData[0].name = this.panel.mapBackground;
+        this.mapData[0].transitions = [];       
+
+        if (this.panel.mapBackground != "custom") {
+            this.mapData[0].addMap(this.panel.mapBackground, 100);
+            this.mapData[0].name = this.panel.mapBackground;
+        }
+        else {
+            this.mapData[0].addMap(this.mapOptions[0], 100);
+            this.mapData[0].name = "Custom Map";
+          
+        }
+
         this.panel.selectableMaps = this.mapData.map(item => item.Serialize());
 
         this.map.mapChanged = true;
@@ -195,7 +205,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
   }
 
 	onDataReceived(dataList) {
-
+        
         if (!dataList) {
           return;
         }
@@ -236,6 +246,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
    filterData(data) {
 
+
         if (this.panel.filter == "") {
             return data;
         }
@@ -248,15 +259,18 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
             console.log('Map panel error: ', e);
         }
 
+       
         let filtereddata: any[] = [];
         let re = new RegExp(filter);
 
-        data.forEach(item => {
-            if (re.test(item.target)) {
-                filtereddata.push(item);
+       data.forEach(item => {
+         
+           if (re.test(item.target)) {
+               filtereddata.push(item);
             }
         });
 
+        console.log(filtereddata)
         return filtereddata
     }
     

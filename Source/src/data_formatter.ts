@@ -128,6 +128,8 @@ export default class DataFormatter {
         let newestTS = Number.MIN_SAFE_INTEGER;
         let oldestTS = Number.MAX_SAFE_INTEGER;
 
+        let result: any[] = [];
+
         data.forEach(point => {
 
             let location;
@@ -205,6 +207,8 @@ export default class DataFormatter {
             }
             const dataValue = {
                 key: point.target,
+                target: point.target,
+                alias: point.alias,
                 locationName: point.target,
                 locationLatitude: location.Latitude,
                 locationLongitude: location.Longitude,
@@ -230,17 +234,12 @@ export default class DataFormatter {
                 newestTS = dataValue.maxTS;
             }
             dataValue.valueRounded = Math.round(dataValue.value);
-            data.push(dataValue);
+            result.push(dataValue);
         });
 
-        data.highestValue = highestValue;
-        data.lowestValue = lowestValue;
-        data.valueRange = highestValue - lowestValue;
-
-        data.newestTS = newestTS;
-        data.oldestTS = oldestTS;
-
-        this.ctrl.data = data;
+        let res = { data: result, highestValue: highestValue, lowestValue: lowestValue, valueRange: (highestValue - lowestValue), newestTS: newestTS, oldestTS: oldestTS}
+      
+        this.ctrl.data = res;
 
     }
 
