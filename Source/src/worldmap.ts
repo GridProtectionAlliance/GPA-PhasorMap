@@ -89,13 +89,6 @@ export default class PhasorMap {
             if (this.ctrl.mapData[0].activeMap != this.ctrl.mapData[0].getMap(this.map.getZoom()))
                 this.mapChanged = true;
             ctrl.ctrl.render();
-		//this.previousZoom = this.map.getZoom();
-			//this.drawFeatures();
-			//console.log(this.previousZoom)
-
-            //if (this.ctrl.panel.moveOverlap && this.ctrl.panel.locationData === "OpenHistorian") {
-            //    this.ctrl.dataFormatter.setOpenHistorian([]);
-            //}
 		});
 
 		this.map.on('baselayerchange', function (e) {
@@ -121,9 +114,7 @@ export default class PhasorMap {
 	// Deal with overlays....
 	// 1) Load Data
 	// 2) Display them as neccesarry
-	RedrawOverlays() {
-        // Make sure we remove Control here
-        
+    RedrawOverlays() {      
 
         if (this.ctrl.panel.customlayers.length == 0) {
             this.controllLayer.remove();

@@ -314,7 +314,7 @@
 			<label class="gf-form-label width-5">use</label>
 			<select class="input-small gf-form-input" ng-model="ctrl.mapData[0].maps[$index]" ng-options="t for t in ctrl.mapOptions"
 					ng-change="ctrl.mapData[0].updateMap()"></select>
-			<button class="btn navbar-button" ng-mousedown="console.log($index)"  ng-show="$index > 0">remove</button>
+			<button class="btn navbar-button" ng-mousedown="ctrl.mapData[0].deleteMap($index)"  ng-show="$index > 0">remove</button>
 		</div>
 		<button class="btn navbar-button" ng-mousedown="ctrl.mapData[0].addMap(ctrl.mapOptions[0],100)">Add Map</button>
 	</div>

@@ -32,11 +32,15 @@ export default class Map {
 		this.updateMap();
 	}
 
-	deleteMap(map: string) {
-		let index = this.maps.indexOf(map);
-		if (index > -1) {
-			this.maps.splice(index, 1) 
-		}
+	deleteMap(index: number) {
+
+		if (index < 1)
+			return
+
+		this.maps.splice(index, 1)
+		
+		this.transitions[index - 1] = this.transitions[index]
+		this.transitions.splice(index, 1) 
 
 		this.updateMap();
 	}
