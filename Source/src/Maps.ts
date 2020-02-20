@@ -10,13 +10,14 @@ export default class Map {
 	maps: any[];
 	transitions: number[];
 	maxZoom: number;
-
+	activeMap: number;
 
 	constructor(ctrl: PhasorMapCtrl, name: string, param: any, isUser?: boolean) {
 		this.ctrl = ctrl;
 		this.user = (isUser == undefined) ? false : isUser;
 		this.isactive = (this.user) ? false : true;
 		this.name = name;
+		this.activeMap = 0;
 
 		this.maps = [];
 		this.transitions = [];
@@ -53,12 +54,15 @@ export default class Map {
 		this.maps = temp.map(item => item.map);
 		this.transitions = temp.map(item => item.transition);
 
-		// set absolute minimum zoom => last map
+		console.log(this.maps)
+		// set absolute maximum zoom => last map
 		this.maxZoom = mapOptions[this.maps[this.maps.length - 1]].maxZoom;
 	}
 
 	getLayer(zoom: number) {
-		let map = this.maps[this.getMap(zoom)];
+
+		this.activeMap = this.getMap(zoom)
+		let map = this.maps[this.activeMap];
 
 		return  (<any>window).L.tileLayer(mapOptions[map].url, {
 			maxZoom: this.maxZoom,
@@ -73,12 +77,23 @@ export default class Map {
 	//update Map
 	getMap(zoom: number) {
 
-		return 0;
+		
+		// Figure out which Map should be shown according to the zoom level....
+		if (this.transitions.length == 1)
+			return 0;
 
+		let i = 0;
+		for (i = 0; i < this.transitions.length; i++) {
+			if (zoom < this.transitions[i]) {
+				return (i );
+			}
+		}
+
+		return (this.maps.length - 1)
 	}
 
 	// Serialize Maps for Json Storage
-	// This is neccesarry because Grafana is stupid....
+	// This is neccesarry because Grafana is stupid and can't handle objects in the settings.
 	Serialize() {
 		let result = {
 			user: this.user,

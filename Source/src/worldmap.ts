@@ -85,6 +85,9 @@ export default class PhasorMap {
         let ctrl = this;
 
         this.map.on("zoomend", () => {
+            console.log("zoom level: " + this.map.getZoom())
+            if (this.ctrl.mapData[0].activeMap != this.ctrl.mapData[0].getMap(this.map.getZoom()))
+                this.mapChanged = true;
             ctrl.ctrl.render();
 		//this.previousZoom = this.map.getZoom();
 			//this.drawFeatures();
@@ -133,8 +136,6 @@ export default class PhasorMap {
 		});
 
 		let ctrl = this;
-
-        console.log(promise)
        
         Promise.all(promise).then(function () {
             ctrl.map.off('overlayremove');
@@ -225,7 +226,6 @@ export default class PhasorMap {
 
         })
 
-        console.log(nLayers);
         if (nLayers > 0) {
             this.controllLayer = L.control.layers(null, userLayers, { collapsed: false, hideSingleBase: true }).addTo(this.map);
         }
