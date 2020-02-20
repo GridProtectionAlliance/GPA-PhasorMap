@@ -200,6 +200,7 @@ export default class PhasorMap {
 
 
         let userLayers = {};
+        let nLayers = 0;
 
         this.ctrl.layerData.forEach(layer => {
 
@@ -214,13 +215,15 @@ export default class PhasorMap {
                 }
             }
             if (addlayer) {
+                nLayers = nLayers + 1;
                 userLayers[layer.name] = layer.layer;
             }
 
         })
 
-
-        this.controllLayer = L.control.layers(null, userLayers, { collapsed: false, hideSingleBase: true }).addTo(this.map);
+        if (nLayers > 0) {
+            this.controllLayer = L.control.layers(null, userLayers, { collapsed: false, hideSingleBase: true }).addTo(this.map);
+        }
     }
 
 
@@ -291,7 +294,7 @@ export default class PhasorMap {
         this.mapLayer = this.ctrl.mapData[0].getLayer(this.map.getZoom()).addTo(this.map);
         this.mapChanged = false;
 
-        if (this.ctrl.mapData[0].maps[0] === "CartoDB Dark") {
+        if (this.ctrl.mapData[0].maps[this.ctrl.mapData[0].getMap(this.map.getZoom())] === "CartoDB Dark") {
             this.ctrl.saturationClass = "map-darken";
         } else {
             this.ctrl.saturationClass = "";
