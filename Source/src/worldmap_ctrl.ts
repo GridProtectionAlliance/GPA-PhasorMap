@@ -415,7 +415,6 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
                 const map = new PhasorMap(ctrl, mapContainer[0]);
                 map.createMap();
                 ctrl.map = map;
-                ctrl.map.RedrawOverlays();
             }
          
             ctrl.map.resize();

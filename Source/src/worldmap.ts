@@ -119,9 +119,13 @@ export default class PhasorMap {
 	// 1) Load Data
 	// 2) Display them as neccesarry
 	RedrawOverlays() {
+        // Make sure we remove Control here
+        
 
-		if (this.ctrl.panel.customlayers.length == 0)
-			return;
+        if (this.ctrl.panel.customlayers.length == 0) {
+            this.controllLayer.remove();
+            return;
+        }
 
 		let promise: any[] = []
         this.ctrl.layerData.forEach(layer => {
@@ -221,6 +225,7 @@ export default class PhasorMap {
 
         })
 
+        console.log(nLayers);
         if (nLayers > 0) {
             this.controllLayer = L.control.layers(null, userLayers, { collapsed: false, hideSingleBase: true }).addTo(this.map);
         }
@@ -255,7 +260,7 @@ export default class PhasorMap {
 
 	
     createLegend() {
-        this.legend = (<any>window).L.control({ position: 'bottomleft' });
+     /*   this.legend = (<any>window).L.control({ position: 'bottomleft' });
         this.legend.onAdd = () => {
             this.legend._div = (<any>window).L.DomUtil.create('div', 'info legend');
             this.legend.update();
@@ -282,7 +287,7 @@ export default class PhasorMap {
             }
             this.legend._div.innerHTML = legendHtml;
         };
-        this.legend.addTo(this.map);
+        this.legend.addTo(this.map); */
     }
 
     RedrawBaseLayer() {
@@ -299,7 +304,7 @@ export default class PhasorMap {
         } else {
             this.ctrl.saturationClass = "";
         }
-
+        
     }
 
 
