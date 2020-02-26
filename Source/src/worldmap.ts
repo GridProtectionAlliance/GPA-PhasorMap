@@ -633,7 +633,7 @@ class FeatureCtrl {
     }
 
     getColor(value, colorindex) {
-        let threshholds = this.ctrl.ctrl.panel.feature.thresholds[colorindex].split(",").map(item => parseInt(item, 10))
+        let threshholds = this.ctrl.ctrl.panel.feature.thresholds[colorindex].split(",").map(item => parseFloat(item, 10))
 
         for (let index = threshholds.length; index > 0; index -= 1) {
             if (value >= threshholds[index - 1]) {
