@@ -10,8 +10,7 @@ import "./css/leaflet.css";
 import PhasorMap from "./worldmap";
 //import moment from 'moment';
 import Layer from "./Layer";
-import Map from "./Maps"
-
+import { Map } from "./Maps";
 
 const panelDefaults = {
 	maxDataPoints: 1,
@@ -62,6 +61,7 @@ const panelDefaults = {
 
     selectableMaps: [],
     customlayers: [],
+    customMapOptions: [],
 
     zoomSteps: 1,
     radiusOverlap: 10,
@@ -78,7 +78,7 @@ const mapCenters = {
 };
 
 export default class PhasorMapCtrl extends MetricsPanelCtrl {
-	static templateUrl = "partials/module.html";
+    static templateUrl = "partials/module.html";
     mapOptions = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap Mapnik', 'Esri NatGeo', 'Esri WorldShaded', 'Esri WorldPhysical', 'Stamen Toner', 'Stamen Terrain', 'Stamen Watercolor'];
     SingleMapOptions = ['CartoDB Positron', 'CartoDB Dark', 'Open Topo Map', 'OpenStreetMap Mapnik', 'Esri NatGeo', 'Esri WorldShaded', 'Esri WorldPhysical', 'Stamen Toner', 'Stamen Terrain', 'Stamen Watercolor', 'custom'];
 
@@ -104,6 +104,10 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
         this.dataFormatter = new DataFormatter(this);
 
+        //Add Custom map Options to mapOptions
+        Map.cleanMapSources()
+        this.panel.customMapOptions.forEach(item => { Map.AddMapOption(item) });
+        this.updateMapSource();
 
         this.events.on("init-edit-mode", this.onInitEditMode.bind(this));
         this.events.on("data-received", this.onDataReceived.bind(this));
@@ -398,6 +402,36 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 		this.panel.selectableMaps.push({ name: "Map " + this.panel.selectableMaps.length, map: this.mapOptions[0], forceReload: false });
 		this.map.updateStaticLayer();
 	}
+
+    AddMapSource() {
+        
+        this.panel.customMapOptions.push({ name: "Map Name", url: "", maxZoom: 8, subdomains: "" });
+        Map.AddMapOption({ name: "Map Name", url: "", maxZoom: 8, subdomains: "" })
+        this.updateMapSource();
+    }
+
+    ChangeMapSource(index) {
+        Map.AddMapOption(this.panel.customMapOptions[index]);
+        this.updateMapSource();
+    }
+
+    RemoveMapSource(index) {
+        Map.DeleteMapOption(this.panel.customMapOptions[index]);
+        this.panel.customMapOptions.pop(index)
+        this.updateMapSource();
+    }
+
+    updateMapSource() {
+        this.mapOptions = [];
+        this.SingleMapOptions = [];
+
+        for (var k in Map.mapOptions) {
+            this.mapOptions.push(k)
+            this.SingleMapOptions.push(k)
+        }
+
+        this.SingleMapOptions.push("custom")
+    }
 
 	
     link(scope, elem, attrs, ctrl) {
