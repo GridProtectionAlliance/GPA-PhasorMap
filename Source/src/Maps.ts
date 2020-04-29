@@ -137,7 +137,7 @@ export class Map {
 		//sort properly
 		let temp: any[] = [];
 		this.maps.forEach((item, index) => {
-			temp.push({ map: item, transition: Math.min(this.transitions[index], Map.mapOptions[item].maxZoom) })
+			temp.push({ map: item, transition: Math.min(this.transitions[index], Map.GetMap(item).maxZoom) })
 		});
 
 		temp.sort((a, b) => (a.transition > b.transition) ? 1 : ((b.transition > a.transition) ? -1 : 0));
@@ -147,7 +147,7 @@ export class Map {
 
 		console.log(this.maps)
 		// set absolute maximum zoom => last map
-		this.maxZoom = Map.mapOptions[this.maps[this.maps.length - 1]].maxZoom;
+		this.maxZoom = Map.GetMap(this.maps[this.maps.length - 1]).maxZoom;
 	}
 
 	getLayer(zoom: number) {
@@ -155,12 +155,12 @@ export class Map {
 		this.activeMap = this.getMap(zoom)
 		let map = this.maps[this.activeMap];
 
-		return  (<any>window).L.tileLayer(Map.mapOptions[map].url, {
+		return (<any>window).L.tileLayer(Map.GetMap(map).url, {
 			maxZoom: this.maxZoom,
-			subdomains: Map.mapOptions[map].subdomains,
+			subdomains: Map.GetMap(map).subdomains,
 			reuseTiles: true,
 			detectRetina: true,
-			attribution: Map.mapOptions[map].attribution,
+			attribution: Map.GetMap(map).attribution,
 		})
 
 	}
@@ -242,7 +242,11 @@ export class Map {
 
 	}
 
-
+	static GetMap(name) {
+		if ("undefined" === typeof (Map.mapOptions[name]))
+			return Map.mapOptions['CartoDB Positron']
+		return Map.mapOptions[name]
+	}
 }
 
 interface MapOption {name: string, url: string, subdomains: string, maxZoom: number }
