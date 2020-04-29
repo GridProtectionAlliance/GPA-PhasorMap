@@ -106,7 +106,7 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 
         //Add Custom map Options to mapOptions
         Map.cleanMapSources()
-        this.panel.customMapOptions.forEach(item => { Map.AddMapOption(item) });
+        this.panel.customMapOptions.forEach(item => { Map.AddMapOption({ name: item.name, url: item.url, maxZoom: item.maxZoom, subdomains: item.subdomains }) });
         this.updateMapSource();
 
         this.events.on("init-edit-mode", this.onInitEditMode.bind(this));
@@ -404,9 +404,12 @@ export default class PhasorMapCtrl extends MetricsPanelCtrl {
 	}
 
     AddMapSource() {
+        let nMap = 0;
+        if (this.panel.customMapOptions.length > 0)
+            nMap = this.panel.customMapOptions[this.panel.customMapOptions.length -1].id + 1;
         
-        this.panel.customMapOptions.push({ name: "Map Name", url: "", maxZoom: 8, subdomains: "" });
-        Map.AddMapOption({ name: "Map Name", url: "", maxZoom: 8, subdomains: "" })
+        this.panel.customMapOptions.push({ name: ("Map " + nMap), url: "", maxZoom: 8, subdomains: "", id: nMap});
+        Map.AddMapOption({ name: ("Map " + nMap), url: "", maxZoom: 8, subdomains: "" })
         this.updateMapSource();
     }
 
