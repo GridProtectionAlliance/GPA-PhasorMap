@@ -81,4 +81,4 @@ For a text layer the source setting should point to a valid `.json` File that co
 * `Latitude`: This field contains the Latitude where the Text should be placed.
 * `Longitude`: This field contains the Longitude where the Text should be placed.
 
-An example file for placing Text on the Map Can be found Here []
+An example file for placing Text on the Map Can be found [here](./TextExample.json)
