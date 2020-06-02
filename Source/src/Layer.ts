@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
 import * as L from './libs/leaflet';
 import PhasorMapCtrl from './worldmap_ctrl';
-import moment from 'moment';
-import $ from "jquery";
+import * as moment from 'moment';
+import * as $ from "jquery";
 
 const LayerTypes = ['geojson', 'tile', 'wms', 'text']
 
