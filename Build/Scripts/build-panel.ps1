@@ -103,11 +103,6 @@ function Build-TS {
 	"Built TypeScript"
 }
 
-function Run-Yarn {
-	"Run YARN"
-	.\node_modules\.bin\yarn
-}
-
 function Deploy($target, $name, $source, $deployZip, $deployBinaries) {
 	new-item -Path "$target" -Name "$name" -ItemType directory
 	"Copy $source to $target\$name"
@@ -168,7 +163,6 @@ if ($changed) {
 	# Set Location to build folder and Install NPM
 	Set-Location "$projectDir\$buildFolder"
 	Install-NPM
-	Run-Yarn
 	Build-TS
 	Set-Location $projectDir
 	Deploy -target "$projectDir" -source "$projectDir\Build\Output\$buildConfig\dist"  -name "$repo" -DeployZip "\\gpaweb\NightlyBuilds\GrafanaPanels" -DeployBinaries "\\gpaweb\NightlyBuilds\GrafanaPanels\Binaries\$repo"
