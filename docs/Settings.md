@@ -76,8 +76,8 @@ Note that for Tile layers the `Source` setting should point to a valid tile serv
 Note that for s WMS layer the `Source` setting should point to a valid WMS server.
 #### Text
 For a text layer the source setting should point to a valid `.json` File that contains an array of Text elements. These Text Elements have the following fields:
-[
-* `Text`: This Field contains the text that should be displayed. The field supports HTML and if pointTags are included in brackets (e.g. `[Tag1:VH]) they are replaced with the value of the tag before the text is palced on the map.
+
+* `Text`: This Field contains the text that should be displayed. The field supports HTML and if pointTags are included in brackets (e.g. `[Tag1:VH]`) they are replaced with the value of the tag before the text is placed on the map.
 * `Latitude`: This field contains the Latitude where the Text should be placed.
 * `Longitude`: This field contains the Longitude where the Text should be placed.
 
