@@ -159,10 +159,10 @@ export default class Layer {
                     formatstring = lst[1];
                 }
 
-                let index = _.find(this.ctrl.data, item => {
+                let index = _.find(this.ctrl.data.data, item => {
                     return item.key === pointtag;
                 });
-
+				
                 if (index && index.hasOwnProperty('value')) {
                     if (formatstring !== "") {
                         txt = txt.replace(str, index.value.toFixed(parseInt(formatstring)));
