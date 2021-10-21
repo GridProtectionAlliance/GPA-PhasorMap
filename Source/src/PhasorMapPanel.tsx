@@ -73,8 +73,6 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
     if (map == null)
       return;
 
-    console.log('update features');
-
     const features: (L.CircleMarker<any> | L.Marker<any>)[] = dataLayer.map((d) => {
       const m = createMarker(d);
       if (d.Showlabel && d.Label !== undefined)
@@ -128,6 +126,9 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
       );
   }
 
+  /*
+    Generates the Leaflet Popup used as Datalabel if they are turned on.
+  */
   function createLabel(m:(L.CircleMarker<any> | L.Marker<any>), d: IDataPoint ) {
         
     m.bindPopup(d.Label?? "", {
@@ -153,8 +154,6 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
 
     let minValue = Infinity; 
     let maxValue = -Infinity;
-
-    console.log(data);
 
     data.series.forEach((s) => { 
       const valueField = s.fields.find((field) => field.type === FieldType.number);
@@ -191,6 +190,9 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
     setDataLayer(updatedData);
   },[data])
 
+  /*
+    Creates the Content for the DataLabel based on the current Settings for each Series
+  */
   function createLabelContent(settings: DisplaySettings, fld: Field<any, Vector<any>>, seriesName: string): string {
 
 
@@ -222,7 +224,9 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
       map.scrollWheelZoom.disable();
   },[options.allowMouseZoom, map])
 
-  /* Calculate Sizing based on Min and Max*/
+  /* 
+    Calculate Sizing based on Min and Max Values
+  */
   function calcSize(minValue: number, maxValue: number, minSize: number, maxSize: number, value: number): number {
    
     if (minValue == -Infinity)
@@ -238,6 +242,9 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
     return sizeRange*value/domain + minSize;
   }
 
+  /*
+    Determines the value to use based on current Settings for each Series
+  */
   function calcValue(fld: Field<any, Vector<any>>): number{
     const agg: DataAggregation = fld.config.custom["DataAgg"];
 
