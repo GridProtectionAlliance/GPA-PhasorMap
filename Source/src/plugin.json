@@ -3,7 +3,7 @@
     "name":  "GPAPhasormap",
     "id":  "grafana-pmumap-panel",
     "info":  {
-                 "description":  "Phasor-mappanelforGrafana.ExtensionoftheWorldmappaneltointegratewiththeopenHistorianandopenPDC.",
+                 "description":  "Phasor-map Panel for Grafana. Based on Extension of the Worldmap panel to integrate with the openHistorian and openPDC.",
                  "author":  {
                                 "name":  "GridProtectionAlliance",
                                 "url":  "https//gridprotectionalliance.org"
@@ -11,7 +11,8 @@
                  "keywords":  [
                                   "worldmap",
                                   "panel",
-                                  "openhistorian"
+                                  "openhistorian",
+								  "geographic Phasor"
                               ],
                  "logos":  {
                                "small":  "images/GPM-logo.png",
@@ -45,9 +46,7 @@
                  "updated":  "2020-09-04"
              },
     "dependencies":  {
-                         "grafanaVersion":  "3.x.x",
-                         "plugins":  [
-
-                                     ]
+		"grafanaVersion": "7.0.x",
+		"plugins": []
                      }
 }
