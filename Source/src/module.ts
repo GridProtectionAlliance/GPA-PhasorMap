@@ -1,9 +1,10 @@
 import { PanelPlugin } from '@grafana/data';
 import { PhasorMapPanel } from './PhasorMapPanel';
-import { DataAggregation, DataVisualization, DisplaySettings, IPanelOptions } from './Settings';
+import { DataAggregation, DisplaySettings, IDataVisualizationSettings, IPanelOptions } from './Settings';
 import { BaseLayerSelect } from './EditorUI/BaseLayerSelect'
 import { DisplaySettingsEditor } from 'EditorUI/DisplaySettings';
 import { CustomLayerList } from 'EditorUI/CustomLayerUI';
+import { DataDisplayUIEditor } from 'EditorUI/DataDisplayUI';
 
 export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldConfig({
   disableStandardOptions: [],
@@ -26,17 +27,15 @@ export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldCon
         min: 0,
         max: 100
       }
-    }).addSelect({
+    }).addCustomEditor({
       path: 'DataVis',
+      id: 'DataVis',
       name: 'Data Marker',
-      description: "Marker used to display Data Point",
-      defaultValue: 'circle'as DataVisualization,
-      settings: { 
-        options:[
-          {value: 'circle' as DataVisualization, label: 'Circle' },
-          {value: 'triangle' as DataVisualization, label: 'Triangle' },
-          {value: 'square' as DataVisualization, label: 'Square' }
-       ]}
+      shouldApply: () => true,
+      process: (v) => v as IDataVisualizationSettings, 
+      override: DataDisplayUIEditor,
+      defaultValue: {type: 'circle', link: ''} as IDataVisualizationSettings,
+      editor: DataDisplayUIEditor,
     }).addNumberInput({
       path: 'opacity',
       name: 'Opacity',

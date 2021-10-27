@@ -43,7 +43,11 @@ export type TileServer = {
 }
 
 export type DataAggregation = ('min'|'max'|'last'|'average'|'count'|'sum')
-export type DataVisualization = ('circle'|'square'|'triangle')
+export type DataVisualization = ('circle'|'square'|'triangle'|'custom')
+export interface IDataVisualizationSettings {
+  type: DataVisualization,
+  link?: string
+}
 
 export type DisplaySettings = {
   Show: boolean,

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Field, FieldType, getDisplayProcessor, PanelProps, Vector } from '@grafana/data';
-import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IGeoJson, IPanelOptions, ITileLayer } from 'Settings';
+import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer } from 'Settings';
 import * as L from 'leaflet';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import _ from 'lodash';
 
 interface Props extends PanelProps<IPanelOptions> {}
-interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string }
+interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string, GeoJSON: any }
 
 interface Overlay {Layer: L.TileLayer|L.GeoJSON<any>, Enabled: boolean, Zoom: [number, number]}
 export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables }) => {
@@ -89,7 +89,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     if (map == null)
       return;
 
-    const features: (L.CircleMarker<any> | L.Marker<any>)[] = dataLayer.map((d) => {
+    const features: (L.CircleMarker<any> | L.Marker<any> | L.GeoJSON<any>)[] = dataLayer.map((d) => {
       const m = createMarker(d);
       if (d.Showlabel && d.Label !== undefined)
         createLabel(m,d);
@@ -103,7 +103,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
   React.useEffect(() => {
     const handle: JQuery.jqXHR<any>[] = [];
 
-    let features = new Map<string,any>();
+    let features = _.cloneDeep(geoJsonFeatures);
+
     let featureRequests: string[] = [];
     options.Layers.filter(item => item.type == 'geojson').forEach((l) => {
       const link = replaceVariables((l as IGeoJson).link)
@@ -115,6 +116,26 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       }) as JQuery.jqXHR<any>);
     })
 
+    if (data.state == 'Done')
+      data.series.forEach((s) => {
+        const valueField = s.fields.find((field) => field.type === FieldType.number);
+        if (valueField == undefined)
+          return;
+        if ((valueField.config.custom["DataVis"] as IDataVisualizationSettings).type != 'custom') 
+          return;
+
+        let link = (valueField.config.custom["DataVis"] as IDataVisualizationSettings).link ?? "";
+        link = link?.replace(/{Name}/gi, s.name??"");
+        if (featureRequests.includes(link))
+          return;
+        featureRequests.push(link);
+        handle.push( $.getJSON(link).then(res => {
+          features.set(link,res)
+        }) as JQuery.jqXHR<any>);
+        
+      });
+
+
     Promise.all(handle).then(() => setGeoJsonFeatures(features));
 
     return () => handle.forEach(h => {
@@ -122,15 +143,15 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         h.abort();
     })
 
-  },[options.Layers]);
+  },[options.Layers, data]);
 
   React.useEffect(() => {
     if (options.Layers == null)
       return;
 
-    setOverlays(options.Layers.map(l => ({Enabled: false, Layer: GenerateLayer(l), Zoom: [l.minZoom,l.maxZoom]})))
+    setOverlays(options.Layers.map(l => ({Enabled: l.minZoom <= zoomlevel && zoomlevel < l.maxZoom, Layer: GenerateLayer(l), Zoom: [l.minZoom,l.maxZoom]})))
 
-  }, [options.Layers])
+  }, [options.Layers, geoJsonFeatures])
 
   /*
     Generates the Layer
@@ -160,15 +181,26 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
                 result["color"] = feature.properties.stroke;
                 result["stroke"] = true;
             }
+            else {
+              result["color"] = (settings as IGeoJson).color;
+              result["stroke"] = true;
+            }
             if (feature?.properties.weight) {
                 result["weight"] = feature.properties.weight;
                 result["stroke"] = true;
             }
+            else {
+              result["weight"] = (settings as IGeoJson).stroke;
+              result["stroke"] = true;
+          }
             if (feature?.properties.fillColor) {
                 result["fillColor"] = feature.properties.fillColor;
                 result["fill"] = true;
             }
-
+            else {
+              result["fillColor"] = (settings as IGeoJson).color;
+              result["fill"] = true;
+          }
             if (feature?.properties.hasOwnProperty('fillOpacity')) {
                 result["fillOpacity"] = feature.properties.fillOpacity;
                 result["fill"] = true;
@@ -176,6 +208,15 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
                 if (feature.properties.fillOpacity === 0) {
                     result['fill'] = false;
                 }
+            }
+            else
+            {
+              result["fillOpacity"] = settings.opacity;
+              result["fill"] = true;
+
+              if (settings.opacity === 0) {
+                  result['fill'] = false;
+              }
             }
             return result;
         }
@@ -195,7 +236,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     let updated = _.cloneDeep(overlays);
 
     updated.forEach((l) => {
-      l.Enabled = l.Zoom[0] <= zoomlevel && zoomlevel > l.Zoom[1];
+      l.Enabled = l.Zoom[0] <= zoomlevel && zoomlevel < l.Zoom[1];
     })
 
     if (overlays.some((l,i) => l.Enabled !== updated[i].Enabled))
@@ -210,6 +251,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     overlays.forEach((l) => { if (l.Enabled) map.addLayer(l.Layer);});
     return () => { overlays.forEach(l => map.removeLayer(l.Layer))}
   }, [map, overlays])
+
   /*
     Create the correct Data markers on the map.
   */
@@ -236,7 +278,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       )})
         }
       );
-    else
+    if (p.Visualization == 'triangle')
       return L.marker(
         [p.Latitude, p.Longitude],
         { 
@@ -253,12 +295,63 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       )})
         }
       );
+    else {
+      return L.geoJSON(p.GeoJSON, {
+        pane: 'overlays',
+        style: function (feature) {
+            let result: any = {};
+            if (feature?.properties.stroke) {
+                result["color"] = feature.properties.stroke;
+                result["stroke"] = true;
+            }
+            else {
+              result["color"] = p.Color;
+              result["stroke"] = true;
+            }
+            if (feature?.properties.weight) {
+                result["weight"] = feature.properties.weight;
+                result["stroke"] = true;
+            }
+            else {
+              result["weight"] = p.Size;
+              result["stroke"] = true;
+          }
+            if (feature?.properties.fillColor) {
+                result["fillColor"] = feature.properties.fillColor;
+                result["fill"] = true;
+            }
+            else {
+              result["fillColor"] = p.Color;
+              result["fill"] = true;
+          }
+            if (feature?.properties.hasOwnProperty('fillOpacity')) {
+                result["fillOpacity"] = feature.properties.fillOpacity;
+                result["fill"] = true;
+
+                if (feature.properties.fillOpacity === 0) {
+                    result['fill'] = false;
+                }
+            }
+            else
+            {
+              result["fillOpacity"] = p.Opacity;
+              result["fill"] = true;
+
+              if (p.Opacity) {
+                  result['fill'] = false;
+              }
+            }
+            return result;
+        }
+    });
+
+    }
   }
 
   /*
     Generates the Leaflet Popup used as Datalabel if they are turned on.
   */
-  function createLabel(m:(L.CircleMarker<any> | L.Marker<any>), d: IDataPoint ) {
+  function createLabel(m:(L.CircleMarker<any> | L.Marker<any> | L.GeoJSON<any>), d: IDataPoint ) {
         
     m.bindPopup(d.Label?? "", {
         offset: (window).L.point(0, -2),
@@ -297,27 +390,36 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     let updatedData: IDataPoint[] = data.series.map((s) => {
       const valueField = s.fields.find((field) => field.type === FieldType.number);
       if (valueField == undefined)
-        return {Value: 0, Longitude: 0, Latitude: 0, Visualization: 'circle' , Size: 0, Color: '#ffffff', Opacity: 0.8, Showlabel: false, StickyLabel: false};
+        return {Value: 0, Longitude: 0, Latitude: 0, Visualization: 'circle' , Size: 0, Color: '#ffffff', Opacity: 0.8, Showlabel: false, StickyLabel: false, GeoJSON: {}};
 
       const display = valueField?.display ?? getDisplayProcessor({ field: valueField  });
       const value = calcValue(valueField);
 
       const label = createLabelContent(valueField.config.custom["dataLabel"] as DisplaySettings, valueField, s.name?? "");
+      let geoJson = {};
+      if ((valueField.config.custom["DataVis"] as IDataVisualizationSettings).type == 'custom') {
+        const dlink =  (valueField.config.custom["DataVis"] as IDataVisualizationSettings).link?.replace(/{Name}/gi, s.name?? "") ?? "";
+        if (geoJsonFeatures.has(dlink))
+          geoJson = geoJsonFeatures.get(dlink);
+        else
+          geoJson = $.getJSON(dlink).responseJSON
+      }
       return {
         Value: value,
         Longitude: s.meta?.custom?.Longitude ?? options.CenterLong, 
         Latitude: s.meta?.custom?.Latitude ?? options.CenterLat, 
-        Visualization: valueField.config.custom["DataVis"] as DataVisualization,
+        Visualization: (valueField.config.custom["DataVis"] as IDataVisualizationSettings).type,
         Size: calcSize(minValue,maxValue,valueField.config.custom["MinSize"],valueField.config.custom["MaxSize"],value),
         Color: display(calcValue(valueField)).color ?? "#ffffff",
         Opacity: valueField.config.custom["opacity"],
         Showlabel: label.length > 0,
         Label: label,
-        StickyLabel: valueField.config.custom["dataLabel"].Stick ?? false
+        StickyLabel: valueField.config.custom["dataLabel"].Stick ?? false,
+        GeoJSON: geoJson
         } as IDataPoint
     })
     setDataLayer(updatedData);
-  },[data])
+  },[data,geoJsonFeatures])
 
   /*
     Creates the Content for the DataLabel based on the current Settings for each Series
@@ -364,8 +466,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       return minSize;
     const sizeRange = Math.abs(maxSize - minSize);
     const domain = Math.abs(maxValue - minValue);
-    console.log('domain:' + domain);
-    console.log(sizeRange*value/domain + minSize);
+
     if (domain == 0)
       return (minSize + maxSize)*0.5;
     return sizeRange*value/domain + minSize;
