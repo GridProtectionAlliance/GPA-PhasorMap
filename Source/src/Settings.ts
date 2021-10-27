@@ -69,4 +69,12 @@ export interface ITileLayer extends ILayer  {
   server: TileServer,
 }
 
-export type CustomLayer = (ITileLayer)
+export interface IGeoJson extends ILayer  {
+  link: string,
+  opacity: number,
+  color: string,
+  stroke: number
+}
+
+
+export type CustomLayer = (ITileLayer | IGeoJson)

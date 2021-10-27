@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Field, FieldType, getDisplayProcessor, PanelProps, Vector } from '@grafana/data';
-import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IPanelOptions } from 'Settings';
+import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IGeoJson, IPanelOptions, ITileLayer } from 'Settings';
 import * as L from 'leaflet';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
@@ -10,13 +10,14 @@ import _ from 'lodash';
 interface Props extends PanelProps<IPanelOptions> {}
 interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string }
 
-interface Overlay {Layer: L.TileLayer, Enabled: boolean, Zoom: [number, number]}
-export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }) => {
+interface Overlay {Layer: L.TileLayer|L.GeoJSON<any>, Enabled: boolean, Zoom: [number, number]}
+export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables }) => {
   const [guid, setGuid] = React.useState<string>('');
   const [map,setMap] = React.useState<L.Map|null>(null);
   const [dataLayer, setDataLayer] = React.useState<IDataPoint[]>([]);
   const [zoomlevel, setZoomLevel] = React.useState<number>(options.defaultZoom);
   const [overlays, setOverlays] = React.useState<Overlay[]>([])
+  const [geoJsonFeatures,setGeoJsonFeatures] = React.useState<Map<string,any>>(new Map<string,any>());
 
   //const theme = useTheme();
   const styles = getStyles();
@@ -47,7 +48,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
       overlay.style.zIndex = '350';
       overlay.style.pointerEvents = 'none';
     }
-    
+
     mp.on('zoomend',() => { setZoomLevel(mp.getZoom())});
     setMap(mp)
     setZoomLevel(options.defaultZoom);
@@ -100,6 +101,30 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
   }, [map, dataLayer]);
 
   React.useEffect(() => {
+    const handle: JQuery.jqXHR<any>[] = [];
+
+    let features = new Map<string,any>();
+    let featureRequests: string[] = [];
+    options.Layers.filter(item => item.type == 'geojson').forEach((l) => {
+      const link = replaceVariables((l as IGeoJson).link)
+      if (featureRequests.includes(link))
+        return;
+      featureRequests.push(link);
+      handle.push( $.getJSON(link).then(res => {
+        features.set(link,res)
+      }) as JQuery.jqXHR<any>);
+    })
+
+    Promise.all(handle).then(() => setGeoJsonFeatures(features));
+
+    return () => handle.forEach(h => {
+      if (h != null && h.abort != null)
+        h.abort();
+    })
+
+  },[options.Layers]);
+
+  React.useEffect(() => {
     if (options.Layers == null)
       return;
 
@@ -110,14 +135,60 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
   /*
     Generates the Layer
   */
-  function GenerateLayer(settings: CustomLayer): L.TileLayer {
-    //if (settings.type == 'tile') 
-      return L.tileLayer(settings.server.Host, {
+  function GenerateLayer(settings: CustomLayer): L.TileLayer|L.GeoJSON<any> {
+    if (settings.type == 'tile') 
+      return L.tileLayer((settings as ITileLayer).server.Host, {
           detectRetina: true,
-          opacity: settings.opacity,
+          opacity: (settings as ITileLayer).opacity,
           pane: 'overlays',
-          subdomains: settings.server.SubDomain,
+          subdomains: (settings as ITileLayer).server.SubDomain,
       });
+    if (settings.type == 'geojson')
+    {
+      const link = replaceVariables((settings as IGeoJson).link);
+      let d;
+      if (!geoJsonFeatures.has(link))
+        d = $.getJSON(link).responseJSON
+      else
+        d = geoJsonFeatures.get(link);
+
+      return L.geoJSON(d, {
+        pane: 'overlays',
+        style: function (feature) {
+            let result: any = {};
+            if (feature?.properties.stroke) {
+                result["color"] = feature.properties.stroke;
+                result["stroke"] = true;
+            }
+            if (feature?.properties.weight) {
+                result["weight"] = feature.properties.weight;
+                result["stroke"] = true;
+            }
+            if (feature?.properties.fillColor) {
+                result["fillColor"] = feature.properties.fillColor;
+                result["fill"] = true;
+            }
+
+            if (feature?.properties.hasOwnProperty('fillOpacity')) {
+                result["fillOpacity"] = feature.properties.fillOpacity;
+                result["fill"] = true;
+
+                if (feature.properties.fillOpacity === 0) {
+                    result['fill'] = false;
+                }
+            }
+            return result;
+        }
+    });
+    }
+    else
+      return L.tileLayer((settings as ITileLayer).server.Host, {
+        detectRetina: true,
+        opacity: (settings as ITileLayer).opacity,
+        pane: 'overlays',
+        subdomains: (settings as ITileLayer).server.SubDomain,
+    });
+
   }
 
   React.useEffect(() => {

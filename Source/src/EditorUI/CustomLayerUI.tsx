@@ -1,9 +1,10 @@
 import React from 'react';
 import { Button, CollapsableSection, Field, Input, Select } from '@grafana/ui';
-import {CustomLayer, ILayer, IPanelOptions, LayerType} from '../Settings';
+import {CustomLayer, IGeoJson, ILayer, IPanelOptions, ITileLayer, LayerType} from '../Settings';
 import { StandardEditorProps } from '@grafana/data';
 import _ from 'lodash';
 import { CustomTileServerUI } from './CustomTileServerUI';
+import { GeoJsonUI } from './GeoJsonUI';
 
 interface Props extends StandardEditorProps<CustomLayer[],any,IPanelOptions> {}
 
@@ -108,6 +109,9 @@ const CustomLayerUI: React.FC<CustomLayerProps> = (props) => {
         MinZoom: 0,
         MaxZoom: 20
       }})
+
+      if (val == 'geojson')
+      props.onChange({...newLayer, link: '', opacity: 0, color: '#ffffff', stroke: 1})
   }
 
   return <>
@@ -120,11 +124,17 @@ const CustomLayerUI: React.FC<CustomLayerProps> = (props) => {
   <Field label={'Min Zoom'} description={'At any Zoom below this the Layer will be disabled.'}>
     <Input value={props.value.minZoom} onChange={(v) => props.onChange({...props.value, minZoom: parseFloat(v.currentTarget?.value ?? '0')})} css={undefined} type={'number'} min={0} max={20}/>
   </Field>
+  <Field label={'Opacity'} description={'The Opacity of the Layer.'}>
+    <Input value={props.value.opacity} onChange={(v) => props.onChange({...props.value, opacity: parseFloat(v.currentTarget?.value ?? '1')})} css={undefined} type={'number'} min={0} max={1}/>
+  </Field>
   <Field label={'Layer Type'} description={'The Type of Layer.'}>
-    <Select options={[{value: 'tile', label: 'Tile Layer'}]} value={props.value?.type ?? "tile"} onChange={(s) => ChangeType((s.value ?? 'tile') as LayerType)} />
+    <Select options={[{value: 'tile', label: 'Tile Layer'}, {value: 'geojson', label: 'GeoJSON Layer'}]} value={props.value?.type ?? "tile"} onChange={(s) => ChangeType((s.value ?? 'tile') as LayerType)} />
   </Field>
   {props.value.type == 'tile'?
-  <CustomTileServerUI value={props.value.server} onChange={(d) => props.onChange({...props.value, server: d})}/>
+  <CustomTileServerUI value={(props.value as ITileLayer).server} onChange={(d) => props.onChange({...props.value, server: d})}/>
+  : null}
+  {props.value.type == 'geojson'?
+   <GeoJsonUI value={(props.value as IGeoJson)} onChange={(d) => props.onChange({...props.value, ...d})}/>
   : null}
 
   <Button variant={'destructive'} key={props.value.name + 'remove'} onClick={() => props.remove()}>Delete {props.value.name}</Button>
