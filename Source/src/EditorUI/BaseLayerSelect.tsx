@@ -1,10 +1,10 @@
 import React from 'react';
 import { StandardEditorProps, SelectableValue } from '@grafana/data';
-import { Field, Input, Select } from '@grafana/ui';
+import { Select } from '@grafana/ui';
 import {IPanelOptions, TileServer} from '../Settings';
 import { CustomTileServerUI } from './CustomTileServerUI';
 
-interface Props extends StandardEditorProps<TileServer,{showCustomOnly?: boolean},IPanelOptions> {}
+interface Props extends StandardEditorProps<TileServer,any,IPanelOptions> {}
 
 const standardOptions: TileServer[] = [
   { 
@@ -92,7 +92,7 @@ const standardOptions: TileServer[] = [
   }
 ];
 
-export const TileServerSelector: React.FC<Props> = ({ item, value, onChange, context }) => {
+export const BaseLayerSelect: React.FC<Props> = ({ item, value, onChange, context }) => {
    const availableOptions: SelectableValue<string>[] = standardOptions.map(item => ({value: item.Name, label: item.Name})).concat({value: "Custom", label: "Custom"});
    const [selectedServer, setSelectedServer] = React.useState<TileServer>(value);
 
@@ -113,8 +113,8 @@ export const TileServerSelector: React.FC<Props> = ({ item, value, onChange, con
 
   
   return <> 
-    {(item.settings?.showCustomOnly ?? false)? <Select options={availableOptions} value={selectedServer?.Name ?? "Custom"} onChange={(s) => changedSelection(s.value)} /> : null}
-    {selectedServer.Name == 'Custom'?
+    <Select options={availableOptions} value={selectedServer?.Name ?? "Custom"} onChange={(s) => changedSelection(s.value)} />
+    {selectedServer?.Name == 'Custom'?
       <CustomTileServerUI value={selectedServer} onChange={(d) => setSelectedServer(d)} />
     : null}
   </>;

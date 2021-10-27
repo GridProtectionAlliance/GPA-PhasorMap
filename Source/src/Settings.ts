@@ -29,6 +29,7 @@ export interface IPanelOptions {
   zoomDelta: number,
   zoomSnap: number,
   allowMouseZoom: boolean,
+  Layers: CustomLayer[]
 }
 
 /* Type Containing a single Tile Server */
@@ -52,3 +53,20 @@ export type DisplaySettings = {
 }
 
 export type TextMode = ('Value'|'Name'| 'ValueName'|'Custom')
+
+export type LayerType = ('geojson'|'tile'|'wms'|'text')
+
+export interface ILayer {
+  type: LayerType,
+  name: string,
+  zIndex: number,
+  minZoom: number, 
+  maxZoom: number
+}
+
+export interface ITileLayer extends ILayer  {
+  opacity: number,
+  server: TileServer,
+}
+
+export type CustomLayer = (ITileLayer)

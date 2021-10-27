@@ -1,8 +1,9 @@
 import { PanelPlugin } from '@grafana/data';
 import { PhasorMapPanel } from './PhasorMapPanel';
 import { DataAggregation, DataVisualization, DisplaySettings, IPanelOptions } from './Settings';
-import { TileServerSelector } from './EditorUI/TileServerSelect'
+import { BaseLayerSelect } from './EditorUI/BaseLayerSelect'
 import { DisplaySettingsEditor } from 'EditorUI/DisplaySettings';
+import { CustomLayerList } from 'EditorUI/CustomLayerUI';
 
 export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldConfig({
   disableStandardOptions: [],
@@ -134,7 +135,13 @@ export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldCon
     path: 'tiles',
     name: 'Base Layer Map',
     category: ['Background Layer'],
-    editor: TileServerSelector,
+    editor: BaseLayerSelect,
+  }).addCustomEditor({
+    id: 'layer',
+    path: 'Layers',
+    name: 'Additional Layers',
+    category: ['Additional Layer'],
+    editor: CustomLayerList,
   });
 
 });

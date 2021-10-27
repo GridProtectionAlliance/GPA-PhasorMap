@@ -1,18 +1,22 @@
 import * as React from 'react';
 import { Field, FieldType, getDisplayProcessor, PanelProps, Vector } from '@grafana/data';
-import { DataAggregation, DataVisualization, DisplaySettings, IPanelOptions } from 'Settings';
+import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IPanelOptions } from 'Settings';
 import * as L from 'leaflet';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
 import 'leaflet/dist/leaflet.css';
+import _ from 'lodash';
 
 interface Props extends PanelProps<IPanelOptions> {}
 interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string }
 
+interface Overlay {Layer: L.TileLayer, Enabled: boolean, Zoom: [number, number]}
 export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }) => {
   const [guid, setGuid] = React.useState<string>('');
   const [map,setMap] = React.useState<L.Map|null>(null);
   const [dataLayer, setDataLayer] = React.useState<IDataPoint[]>([]);
+  const [zoomlevel, setZoomLevel] = React.useState<number>(options.defaultZoom);
+  const [overlays, setOverlays] = React.useState<Overlay[]>([])
 
   //const theme = useTheme();
   const styles = getStyles();
@@ -36,7 +40,17 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
 			      zoomSnap: options.zoomSnap,
 			      zoomDelta: options.zoomDelta
         });
+
+    mp.createPane('overlays');
+    const overlay = mp.getPane('overlays') 
+    if (overlay != null) {
+      overlay.style.zIndex = '350';
+      overlay.style.pointerEvents = 'none';
+    }
+    
+    mp.on('zoomend',() => { setZoomLevel(mp.getZoom())});
     setMap(mp)
+    setZoomLevel(options.defaultZoom);
     return () => {mp.remove()}
   }, [width,height, guid])
 
@@ -56,6 +70,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
     return () => { layer.remove(); }
 
   }, [options.tiles, map])
+
 
   React.useEffect(() => {
     if (map == null)
@@ -84,6 +99,49 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height }
     
   }, [map, dataLayer]);
 
+  React.useEffect(() => {
+    if (options.Layers == null)
+      return;
+
+    setOverlays(options.Layers.map(l => ({Enabled: false, Layer: GenerateLayer(l), Zoom: [l.minZoom,l.maxZoom]})))
+
+  }, [options.Layers])
+
+  /*
+    Generates the Layer
+  */
+  function GenerateLayer(settings: CustomLayer): L.TileLayer {
+    //if (settings.type == 'tile') 
+      return L.tileLayer(settings.server.Host, {
+          detectRetina: true,
+          opacity: settings.opacity,
+          pane: 'overlays',
+          subdomains: settings.server.SubDomain,
+      });
+  }
+
+  React.useEffect(() => {
+    let updated = _.cloneDeep(overlays);
+
+    updated.forEach((l) => {
+      l.Enabled = l.Zoom[0] <= zoomlevel && zoomlevel > l.Zoom[1];
+    })
+
+    if (overlays.some((l,i) => l.Enabled !== updated[i].Enabled))
+      setOverlays(updated);
+
+  }, [zoomlevel]);
+
+  React.useEffect(() => {
+    if (map == null)
+      return;
+    
+    overlays.forEach((l) => { if (l.Enabled) map.addLayer(l.Layer);});
+    return () => { overlays.forEach(l => map.removeLayer(l.Layer))}
+  }, [map, overlays])
+  /*
+    Create the correct Data markers on the map.
+  */
   function createMarker(p: IDataPoint) {
 
     if (p.Visualization == 'circle')
