@@ -8,7 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import _ from 'lodash';
 
 interface Props extends PanelProps<IPanelOptions> {}
-interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string, GeoJSON: any }
+interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string, GeoJSON?: any }
 
 interface Overlay {Layer: L.TileLayer|L.GeoJSON<any>, Enabled: boolean, Zoom: [number, number]}
 export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables }) => {
@@ -106,7 +106,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     let features = _.cloneDeep(geoJsonFeatures);
 
     let featureRequests: string[] = [];
-    options.Layers.filter(item => item.type == 'geojson').forEach((l) => {
+    (options.Layers?.filter(item => item.type == 'geojson') ?? []).forEach((l) => {
       const link = replaceVariables((l as IGeoJson).link)
       if (featureRequests.includes(link))
         return;
@@ -396,7 +396,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       const value = calcValue(valueField);
 
       const label = createLabelContent(valueField.config.custom["dataLabel"] as DisplaySettings, valueField, s.name?? "");
-      let geoJson = {};
+      let geoJson = null;
       if ((valueField.config.custom["DataVis"] as IDataVisualizationSettings).type == 'custom') {
         const dlink =  (valueField.config.custom["DataVis"] as IDataVisualizationSettings).link?.replace(/{Name}/gi, s.name?? "") ?? "";
         if (geoJsonFeatures.has(dlink))
