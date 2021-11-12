@@ -65,20 +65,23 @@ export interface ILayer {
   name: string,
   zIndex: number,
   minZoom: number, 
-  maxZoom: number
+  maxZoom: number,
+  opacity: number,
 }
 
 export interface ITileLayer extends ILayer  {
-  opacity: number,
   server: TileServer,
 }
 
 export interface IGeoJson extends ILayer  {
   link: string,
-  opacity: number,
   color: string,
   stroke: number
 }
 
+export interface IWMSLayer extends ILayer {
+  link: string,
+  layer: string
+}
 
-export type CustomLayer = (ITileLayer | IGeoJson)
+export type CustomLayer = (ITileLayer | IGeoJson | IWMSLayer)

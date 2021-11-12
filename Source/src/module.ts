@@ -76,7 +76,7 @@ export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldCon
     .addNumberInput({
       path: 'CenterLat',
       name: 'Center Lat',
-      description: 'Default Latitude the meap is centered on',
+      description: 'Default Latitude the map is centered on',
       category: ['Map Settings'],
       defaultValue: 35,
       settings: {

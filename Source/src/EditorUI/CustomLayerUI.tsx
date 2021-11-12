@@ -1,10 +1,11 @@
 import React from 'react';
 import { Button, CollapsableSection, Field, Input, Select } from '@grafana/ui';
-import {CustomLayer, IGeoJson, ILayer, IPanelOptions, ITileLayer, LayerType} from '../Settings';
+import {CustomLayer, IGeoJson, ILayer, IPanelOptions, ITileLayer, IWMSLayer, LayerType} from '../Settings';
 import { StandardEditorProps } from '@grafana/data';
 import _ from 'lodash';
 import { CustomTileServerUI } from './CustomTileServerUI';
 import { GeoJsonUI } from './GeoJsonUI';
+import { WmsUI } from './WmsUI';
 
 interface Props extends StandardEditorProps<CustomLayer[],any,IPanelOptions> {}
 
@@ -97,6 +98,7 @@ const CustomLayerUI: React.FC<CustomLayerProps> = (props) => {
       zIndex: props.value?.zIndex ?? 1,
       minZoom: props.value?.minZoom ?? 0,
       maxZoom: props.value?.maxZoom ?? 20,
+      opacity: 1.0,
       type: val
      }
 
@@ -111,7 +113,9 @@ const CustomLayerUI: React.FC<CustomLayerProps> = (props) => {
       }})
 
       if (val == 'geojson')
-      props.onChange({...newLayer, link: '', opacity: 0, color: '#ffffff', stroke: 1})
+        props.onChange({...newLayer, link: '', opacity: 0, color: '#ffffff', stroke: 1})
+      if (val == 'wms')
+        props.onChange({...newLayer, link: '', layer: ''})
   }
 
   return <>
@@ -128,7 +132,7 @@ const CustomLayerUI: React.FC<CustomLayerProps> = (props) => {
     <Input value={props.value.opacity} onChange={(v) => props.onChange({...props.value, opacity: parseFloat(v.currentTarget?.value ?? '1')})} css={undefined} type={'number'} min={0} max={1}/>
   </Field>
   <Field label={'Layer Type'} description={'The Type of Layer.'}>
-    <Select options={[{value: 'tile', label: 'Tile Layer'}, {value: 'geojson', label: 'GeoJSON Layer'}]} value={props.value?.type ?? "tile"} onChange={(s) => ChangeType((s.value ?? 'tile') as LayerType)} />
+    <Select options={[{value: 'tile', label: 'Tile Layer'}, {value: 'geojson', label: 'GeoJSON Layer'}, {value: 'wms', label: 'WMS Layer'}]} value={props.value?.type ?? "tile"} onChange={(s) => ChangeType((s.value ?? 'tile') as LayerType)} />
   </Field>
   {props.value.type == 'tile'?
   <CustomTileServerUI value={(props.value as ITileLayer).server} onChange={(d) => props.onChange({...props.value, server: d})}/>
@@ -136,7 +140,9 @@ const CustomLayerUI: React.FC<CustomLayerProps> = (props) => {
   {props.value.type == 'geojson'?
    <GeoJsonUI value={(props.value as IGeoJson)} onChange={(d) => props.onChange({...props.value, ...d})}/>
   : null}
-
+ {props.value.type == 'wms'?
+   <WmsUI value={(props.value as IWMSLayer)} onChange={(d) => props.onChange({...props.value, ...d})}/>
+  : null}
   <Button variant={'destructive'} key={props.value.name + 'remove'} onClick={() => props.remove()}>Delete {props.value.name}</Button>
 
    </>

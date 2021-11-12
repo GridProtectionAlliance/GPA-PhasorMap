@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Field, FieldType, getDisplayProcessor, PanelProps, Vector } from '@grafana/data';
-import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer } from 'Settings';
+import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer, IWMSLayer } from 'Settings';
 import * as L from 'leaflet';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
@@ -160,7 +160,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     if (settings.type == 'tile') 
       return L.tileLayer((settings as ITileLayer).server.Host, {
           detectRetina: true,
-          opacity: (settings as ITileLayer).opacity,
+          opacity: settings.opacity,
           pane: 'overlays',
           subdomains: (settings as ITileLayer).server.SubDomain,
       });
@@ -222,10 +222,23 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         }
     });
     }
+    if (settings.type == 'wms') {
+      const link = replaceVariables((settings as IWMSLayer).link);
+      const layer = replaceVariables((settings as IWMSLayer).layer);
+
+      return L.tileLayer.wms(link,{
+        transparent: true,
+        layers: layer,
+        format: 'image/png',
+        opacity: settings.opacity,
+        pane: 'overlays',
+        
+    });
+    }
     else
       return L.tileLayer((settings as ITileLayer).server.Host, {
         detectRetina: true,
-        opacity: (settings as ITileLayer).opacity,
+        opacity: settings.opacity,
         pane: 'overlays',
         subdomains: (settings as ITileLayer).server.SubDomain,
     });
