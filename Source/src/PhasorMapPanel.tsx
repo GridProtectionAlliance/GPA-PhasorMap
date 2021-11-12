@@ -487,7 +487,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     if (settings.TextMode == "Name")
       return seriesName;
   
-    return seriesName + " " + (display(value).prefix) ?? "" + display(value).text + (display(value).suffix?? "");
+    return seriesName + " " + (display(value).prefix ?? "") + display(value).text + (display(value).suffix?? "");
 
 
   }
