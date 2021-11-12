@@ -8,7 +8,15 @@ import 'leaflet/dist/leaflet.css';
 import _ from 'lodash';
 
 interface Props extends PanelProps<IPanelOptions> {}
-interface IDataPoint { Value: number, Longitude: number, Latitude: number, Visualization: DataVisualization, Size: number, Color: string, Opacity: number, Showlabel: boolean, StickyLabel: boolean, Label?: string, GeoJSON?: any }
+interface IDataPoint { 
+  Value: number, 
+  Longitude: number, Latitude: number,
+  Visualization: DataVisualization, Size: number, Color: string, Opacity: number,
+  Showlabel: boolean, StickyLabel: boolean, Label?: string, 
+  GeoJSON?: any, 
+  Link?: string, 
+  TargetBlank?: boolean
+ }
 
 interface Overlay {Layer: L.TileLayer|L.GeoJSON<any>, Enabled: boolean, Zoom: [number, number]}
 export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables }) => {
@@ -91,6 +99,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
 
     const features: (L.CircleMarker<any> | L.Marker<any> | L.GeoJSON<any>)[] = dataLayer.map((d) => {
       const m = createMarker(d);
+      createLink(m,d);
       if (d.Showlabel && d.Label !== undefined)
         createLabel(m,d);
       return m.addTo(map)
@@ -232,7 +241,6 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         format: 'image/png',
         opacity: settings.opacity,
         pane: 'overlays',
-        
     });
     }
     else
@@ -383,6 +391,23 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         
   }
 
+  function createLink(m:(L.CircleMarker<any> | L.Marker<any> | L.GeoJSON<any>), d: IDataPoint) {
+    if (d.Link == undefined)
+      return;
+
+    if (d.TargetBlank ?? false)
+    m.on('click', (evt: L.LeafletEvent) => {
+      window.open(d.Link?? '', '_blank')
+    });
+
+    else
+      m.on('click', (evt: L.LeafletEvent) => {
+        window.location.href = d.Link?? '';
+
+    });
+
+  }
+
   React.useEffect(() => {
     if (data.state != 'Done')
       return;
@@ -417,6 +442,13 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         else
           geoJson = $.getJSON(dlink).responseJSON
       }
+      let dataLink = undefined;
+      let targetBlank = false;
+      if (valueField.config.links != undefined && valueField.config.links.length > 0){
+        dataLink = valueField.config.links[0]["url"];
+        targetBlank = valueField.config.links[0]["targetBlank"] ?? false;
+      }
+
       return {
         Value: value,
         Longitude: s.meta?.custom?.Longitude ?? options.CenterLong, 
@@ -428,7 +460,9 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         Showlabel: label.length > 0,
         Label: label,
         StickyLabel: valueField.config.custom["dataLabel"].Stick ?? false,
-        GeoJSON: geoJson
+        GeoJSON: geoJson,
+        Link: dataLink,
+        TargetBlank: targetBlank,
         } as IDataPoint
     })
     setDataLayer(updatedData);
@@ -477,12 +511,14 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       return maxSize;
     if (maxValue == Infinity)
       return minSize;
+    
+    
     const sizeRange = Math.abs(maxSize - minSize);
     const domain = Math.abs(maxValue - minValue);
 
     if (domain == 0)
       return (minSize + maxSize)*0.5;
-    return sizeRange*value/domain + minSize;
+    return sizeRange*(value-minValue)/domain + minSize;
   }
 
   /*
