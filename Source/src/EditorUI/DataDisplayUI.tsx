@@ -19,7 +19,9 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
             {value: 'circle' as DataVisualization, label: 'Circle' },
             {value: 'triangle' as DataVisualization, label: 'Triangle' },
             {value: 'square' as DataVisualization, label: 'Square' },
-            {value: 'custom' as DataVisualization, label: 'Custom GeoJSON' }
+            {value: 'custom' as DataVisualization, label: 'Custom GeoJSON' },
+            {value: 'phasorAng' as DataVisualization, label: 'Phasor Clock Angle' },
+            {value: 'phasorMag' as DataVisualization, label: 'Phasor Clock Magnitude' }
             ]}
             value={currentSettings.type}
             onChange={(v) => setCurrentSettings((d) => ({...d, type: v.value as DataVisualization }))}
@@ -32,5 +34,33 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
         
        : null
     }
+    {currentSettings.type == 'phasorMag'?
+    <>
+      <Field label={'Nominal Voltage'}  description={'The nominal Voltage used in the Phasor Clock.'}>
+            <Input value={currentSettings.nominalVoltage} type='number' onChange={(v) => { setCurrentSettings((d) => ({...d, nominalVoltage: parseFloat(v.currentTarget?.value as string ?? '161')})) } } css={undefined}/>
+      </Field>
+      <Field label={'Inner most Magnitude'}  description={'The Minimum Voltage that is being displayed.'}>
+            <Input value={currentSettings.startMagnitude} type='number' onChange={(v) => { setCurrentSettings((d) => ({...d, startMagnitude: parseFloat(v.currentTarget?.value as string ?? '140')})) } } css={undefined}/>
+      </Field>
+      <Field label={'Magnitude Steps'}  description={'The steps in Magnitude displayed on the Clock.'}>
+            <Input value={currentSettings.stepMagnitude} type='number' onChange={(v) => { setCurrentSettings((d) => ({...d, stepMagnitude: parseFloat(v.currentTarget?.value as string ?? '10')})) } } css={undefined}/>
+      </Field>
+    </> : null}
+    {currentSettings.type == 'phasorAng'?
+    <>
+      <Field label={'Number of Segments'}  description={'The number of Angle Segments shown.'}>
+            <Input value={currentSettings.angleSegments} type='number' onChange={(v) => { setCurrentSettings((d) => ({...d, angleSegments: parseInt(v.currentTarget?.value as string ?? '4')})) } } css={undefined}/>
+      </Field>
+      <Field label={'Phasor Visualization'}  description={'The visualization shown on the Phasor Clock.'}>
+      <Select
+            options={[
+            {value: 'value' as ('value'|'heatmap'|'both'), label: 'Arrow' },
+            {value: 'heatmap' as ('value'|'heatmap'|'both'), label: 'HeatMap' },
+            {value: 'both' as ('value'|'heatmap'|'both'), label: 'Both' }           
+            ]}
+            value={currentSettings.show}
+            onChange={(v) => { setCurrentSettings((d) => ({...d, show: v.currentTarget?.value as ('value'|'heatmap'|'both') ?? 'value'})) } } />
+      </Field>
+    </> : null}
   </>;
 };

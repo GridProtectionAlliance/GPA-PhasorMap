@@ -34,7 +34,15 @@ export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldCon
       shouldApply: () => true,
       process: (v) => v as IDataVisualizationSettings, 
       override: DataDisplayUIEditor,
-      defaultValue: {type: 'circle', link: ''} as IDataVisualizationSettings,
+      defaultValue: {
+        type: 'circle', 
+        link: '', 
+        angleSegments: 4,
+        nominalVoltage: 161,
+        stepMagnitude: 10,
+        startMagnitude: 140,
+        show: 'value'
+      } as IDataVisualizationSettings,
       editor: DataDisplayUIEditor,
     }).addNumberInput({
       path: 'opacity',
