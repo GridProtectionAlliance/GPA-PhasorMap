@@ -445,7 +445,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
       let dataLink = undefined;
       let targetBlank = false;
       if (valueField.config.links != undefined && valueField.config.links.length > 0){
-        dataLink = valueField.config.links[0]["url"];
+        dataLink = valueField.config.links[0]["url"]?.replace(/{Name}/gi, s.name?? "") ?? "";;
         targetBlank = valueField.config.links[0]["targetBlank"] ?? false;
       }
 
