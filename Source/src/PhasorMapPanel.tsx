@@ -6,6 +6,7 @@ import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
 import 'leaflet/dist/leaflet.css';
 import _ from 'lodash';
+import { PhasorClock } from 'PhasorClock';
 
 interface Props extends PanelProps<IPanelOptions> {}
 interface IDataPoint { 
@@ -26,7 +27,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
   const [zoomlevel, setZoomLevel] = React.useState<number>(options.defaultZoom);
   const [overlays, setOverlays] = React.useState<Overlay[]>([])
   const [geoJsonFeatures,setGeoJsonFeatures] = React.useState<Map<string,any>>(new Map<string,any>());
-
+  const [phasorClocks, setPhasorClocks] = React.useState<Map<string,PhasorClock>>(new Map<string,PhasorClock>());
+  
   //const theme = useTheme();
   const styles = getStyles();
 
@@ -108,6 +110,20 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     return () => {features.forEach(f => f.remove())}
     
   }, [map, dataLayer]);
+
+  React.useEffect(() => {
+    if (map == null)
+      return;
+
+    const clocks: PhasorClock[] = [];
+    phasorClocks.forEach((c) => clocks.push(c))
+    const features: (L.CircleMarker<any> | L.Marker<any> | L.GeoJSON<any>)[] = clocks.map((d) => {
+      const m = createClock(d);
+      return m.addTo(map)
+    });
+
+    return () => {features.forEach(f => f.remove())}
+  },[ map, phasorClocks])
 
   React.useEffect(() => {
     const handle: JQuery.jqXHR<any>[] = [];
@@ -369,6 +385,32 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     }
   }
 
+   /*
+    Create the Marker of the PhasoprClock on the map.
+  */
+    function createClock(p: PhasorClock) {
+
+      return  L.marker(
+        [p.Latitude, p.Longitude],
+        { 
+          icon: L.divIcon({className: cx(styles.wrapper, css`
+          background-color: 'transparent';
+          overflow: hidden;
+          margin-top: 0px;
+          margin-left: 0px;
+        `
+      ), html: p.DrawIcon(), 
+      iconSize: new L.Point(2*p.Radius, 2*p.Radius)
+    })
+        }
+        );
+      
+      
+  
+      
+    }
+
+    
   /*
     Generates the Leaflet Popup used as Datalabel if they are turned on.
   */
@@ -425,11 +467,17 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         maxValue = calcValue(valueField) ;
     });
 
-    let updatedData: IDataPoint[] = data.series.map((s) => {
+    let updatedData: IDataPoint[] = data.series.filter((s) => {
+      const valueField = s.fields.find((field) => field.type === FieldType.number);
+      if (valueField == undefined)
+        return true;
+       return (valueField.config.custom["DataVis"] as IDataVisualizationSettings).type !== 'phasorMag' && (valueField.config.custom["DataVis"] as IDataVisualizationSettings).type !== 'phasorAng';
+    }).map((s) => {
       const valueField = s.fields.find((field) => field.type === FieldType.number);
       if (valueField == undefined)
         return {Value: 0, Longitude: 0, Latitude: 0, Visualization: 'circle' , Size: 0, Color: '#ffffff', Opacity: 0.8, Showlabel: false, StickyLabel: false, GeoJSON: {}};
 
+      
       const display = valueField?.display ?? getDisplayProcessor({ field: valueField  });
       const value = calcValue(valueField);
 
@@ -466,6 +514,32 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         } as IDataPoint
     })
     setDataLayer(updatedData);
+
+    let updatedClocks = new Map<string,PhasorClock>();
+    data.series.filter((s) => {
+      const valueField = s.fields.find((field) => field.type === FieldType.number);
+      if (valueField == undefined)
+        return false;
+       return (valueField.config.custom["DataVis"] as IDataVisualizationSettings).type == 'phasorMag' || (valueField.config.custom["DataVis"] as IDataVisualizationSettings).type == 'phasorAng';
+    }).forEach(s => {
+      const valueField = s.fields.find((field) => field.type === FieldType.number);
+      if (valueField == undefined)
+        return;
+
+      const long: number = s.meta?.custom?.Longitude ?? options.CenterLong;
+      const lat: number = s.meta?.custom?.Latitude ?? options.CenterLat;
+      const key = long.toFixed(9) + "-" + lat.toFixed(9);
+
+      const val = calcValue(valueField);
+      const size = calcSize(minValue,maxValue,valueField.config.custom["MinSize"],valueField.config.custom["MaxSize"],val)
+      if (updatedClocks.has(key))
+        updatedClocks.get(key)?.AddField(valueField,size,val);
+      else
+        updatedClocks.set(key, new PhasorClock(valueField, lat, long, size, val))
+    })
+
+    setPhasorClocks(updatedClocks);
+
   },[data,geoJsonFeatures])
 
   /*

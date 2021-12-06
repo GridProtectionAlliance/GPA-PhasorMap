@@ -41,7 +41,8 @@ export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldCon
         nominalVoltage: 161,
         stepMagnitude: 10,
         startMagnitude: 140,
-        show: 'value'
+        show: 'value',
+        secondaryColor: '#ffffff'
       } as IDataVisualizationSettings,
       editor: DataDisplayUIEditor,
     }).addNumberInput({

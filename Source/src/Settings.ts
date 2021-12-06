@@ -51,7 +51,8 @@ export interface IDataVisualizationSettings {
   nominalVoltage?: number,
   startMagnitude?: number,
   stepMagnitude?: number,
-  show?: ('value'|'heatmap'|'both')
+  show?: ('value'|'heatmap'|'both'),
+  secondaryColor?: string
 }
 
 export type DisplaySettings = {

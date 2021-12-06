@@ -1,6 +1,6 @@
 import React from 'react';
 import { FieldConfigEditorProps } from '@grafana/data';
-import { Field, Input, Select } from '@grafana/ui';
+import { ColorPicker, Field, Input, Select } from '@grafana/ui';
 import { DataVisualization, IDataVisualizationSettings} from '../Settings';
 
 interface Props extends FieldConfigEditorProps<IDataVisualizationSettings,any> {}
@@ -59,8 +59,12 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
             {value: 'both' as ('value'|'heatmap'|'both'), label: 'Both' }           
             ]}
             value={currentSettings.show}
-            onChange={(v) => { setCurrentSettings((d) => ({...d, show: v.currentTarget?.value as ('value'|'heatmap'|'both') ?? 'value'})) } } />
+            onChange={(v) => { setCurrentSettings((d) => ({...d, show: v.value as ('value'|'heatmap'|'both') ?? 'value'})) } } />
       </Field>
+      {currentSettings.show == 'both' || currentSettings.show == 'heatmap'? 
+      <Field label={'Section border Color'}  description={'The color of the angle and magnitude lines.'}>
+            <ColorPicker color={currentSettings?.secondaryColor ?? "#ffffff"} onChange={(v) => { setCurrentSettings((d) => ({...d, secondaryColor: v as string ?? 'black'})) } } />
+      </Field> : null }value
     </> : null}
   </>;
 };

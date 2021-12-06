@@ -23,9 +23,11 @@
 	},
 	"devDependencies": {
 		"@grafana/data": "^7.0.0",
-		"@grafana/toolkit": "^7.0.0",
+		"@grafana/toolkit": "^7.3.6",
 		"@grafana/ui": "^7.0.0",
+		"@types/chroma-js": "^2.1.3",
 		"@types/jquery": "3.5.8",
+		"@types/leaflet": "^1.7.0",
 		"@types/lodash": "^4.14.176"
 	},
 	"engines": {
@@ -33,7 +35,7 @@
 	},
 	"dependencies": {
 		"@grafana/runtime": "^7.3.6",
-		"@types/leaflet": "^1.7.0",
+		"chroma-js": "^2.1.2",
 		"leaflet": "^1.7.1",
 		"lodash": "^4.17.20"
 	}
