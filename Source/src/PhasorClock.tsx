@@ -23,7 +23,7 @@ export class PhasorClock {
   Longitude: number;
   Latitude: number;
 
-  constructor(fld: Field|undefined, long: number, lat: number, size: number, value: number ) {
+  constructor(fld: Field|undefined, lat: number, long: number, size: number, value: number ) {
     this.baseColor = "white";
     this.arrowColor = "red";
     this.secondaryColor = "black";

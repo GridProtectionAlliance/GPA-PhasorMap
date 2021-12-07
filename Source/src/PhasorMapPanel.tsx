@@ -528,7 +528,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
 
       const long: number = s.meta?.custom?.Longitude ?? options.CenterLong;
       const lat: number = s.meta?.custom?.Latitude ?? options.CenterLat;
-      const key = long.toFixed(9) + "-" + lat.toFixed(9);
+      const key = long.toFixed(9) + "*" + lat.toFixed(9);
 
       const val = calcValue(valueField);
       const size = calcSize(minValue,maxValue,valueField.config.custom["MinSize"],valueField.config.custom["MaxSize"],val)
