@@ -66,5 +66,8 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
             <ColorPicker color={currentSettings?.secondaryColor ?? "#ffffff"} onChange={(v) => { setCurrentSettings((d) => ({...d, secondaryColor: v as string ?? 'black'})) } } />
       </Field> : null }value
     </> : null}
+    {currentSettings.type == 'phasorMag' || currentSettings.type == 'phasorAng'?  <Field label={'Phasor Index'}  description={'Index used to match magnitudes and Phases.'}>
+            <Input value={currentSettings.phasorIndex} type='number' onChange={(v) => { setCurrentSettings((d) => ({...d, phasorIndex: parseInt(v.currentTarget?.value as string ?? '1')})) } } css={undefined}/>
+      </Field> : null}
   </>;
 };

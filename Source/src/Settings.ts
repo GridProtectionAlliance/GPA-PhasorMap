@@ -52,7 +52,8 @@ export interface IDataVisualizationSettings {
   startMagnitude?: number,
   stepMagnitude?: number,
   show?: ('value'|'heatmap'|'both'),
-  secondaryColor?: string
+  secondaryColor?: string,
+  phasorIndex?: number
 }
 
 export type DisplaySettings = {
