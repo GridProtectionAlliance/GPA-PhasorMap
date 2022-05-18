@@ -1,12 +1,12 @@
 import * as React from 'react';
 import { Field, FieldType, getDisplayProcessor, PanelProps, Vector } from '@grafana/data';
-import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer, IWMSLayer } from 'Settings';
+import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer, IWMSLayer } from './Settings';
 import * as L from 'leaflet';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
 import 'leaflet/dist/leaflet.css';
 import _ from 'lodash';
-import { PhasorClock } from 'PhasorClock';
+import { PhasorClock } from './PhasorClock';
 
 interface Props extends PanelProps<IPanelOptions> {}
 interface IDataPoint { 
@@ -16,7 +16,9 @@ interface IDataPoint {
   Showlabel: boolean, StickyLabel: boolean, Label?: string, 
   GeoJSON?: any, 
   Link?: string, 
-  TargetBlank?: boolean
+  TargetBlank?: boolean,
+  SVG?: string,
+  Name?: string,
  }
 
 interface Overlay {Layer: L.TileLayer|L.GeoJSON<any>, Enabled: boolean, Zoom: [number, number]}
@@ -311,8 +313,10 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
           background-color: ${p.Color};
           overflow: hidden;
           opacity: ${p.Opacity}
+          margin-top: -${0.5*p.Size}px;
+          margin-left: -${0.5*p.Size}px;
         `
-      )})
+      ), iconSize: undefined})
         }
       );
     if (p.Visualization == 'triangle')
@@ -328,10 +332,27 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
           border-right: ${p.Size}px solid transparent;
           border-bottom: ${p.Size}px solid ${p.Color};
           opacity: ${p.Opacity};
+          margin-top: -${0.5*p.Size}px;
+          margin-left: -${p.Size}px;
         `
-      )})
+      ), iconSize: undefined})
         }
       );
+    if (p.Visualization == 'svg')
+        return L.marker(
+          [p.Latitude, p.Longitude],
+          { 
+            icon: L.divIcon({className: cx(styles.wrapper, css`
+            width: ${p.Size}px;
+            height: ${p.Size}px;
+            background: transparent;
+            overflow: hidden;
+            opacity: ${p.Opacity};
+            margin-top: -${0.5*p.Size}px;
+            margin-left: -${0.5*p.Size}px;
+          `), html: ProcessUserSVG(p.SVG,p), iconSize: undefined
+        })
+          })
     else {
       return L.geoJSON(p.GeoJSON, {
         pane: 'overlays',
@@ -385,6 +406,33 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     }
   }
 
+  /*
+    Parse JS from User Input.
+  */
+    function parseUserJS(obj: string,p: IDataPoint) {
+      try {
+        const preAmble = '"use strict";const Value='+ (p.Value.toString()) +';' + 'const Name=\'' + p.Name + '\';'
+        return Function(preAmble+'return (' + obj + ')')();
+      } catch (error) {
+        console.error(error);
+        return '';
+      }
+    }
+  
+    function ProcessUserSVG(txt: string|undefined,p: IDataPoint) {
+      let parsed = txt ?? "";
+      const regex = /\{([^\}]*)\}/g;
+      const found = parsed.match(regex);
+
+      if (found != null)
+      	found.forEach(sec => {
+        parsed = parsed.replace(sec, parseUserJS(sec.replace(/{/g,'').replace(/}/g,''),p))
+        })
+        
+        return parsed
+    }
+  
+ 
    /*
     Create the Marker of the PhasoprClock on the map.
   */
@@ -483,6 +531,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
 
       const label = createLabelContent(valueField.config.custom["dataLabel"] as DisplaySettings, valueField, s.name?? "");
       let geoJson = null;
+      let svg = null;
+
       if ((valueField.config.custom["DataVis"] as IDataVisualizationSettings).type == 'custom') {
         const dlink =  (valueField.config.custom["DataVis"] as IDataVisualizationSettings).link?.replace(/{Name}/gi, s.name?? "") ?? "";
         if (geoJsonFeatures.has(dlink))
@@ -490,12 +540,17 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         else
           geoJson = $.getJSON(dlink).responseJSON
       }
+
+      if ((valueField.config.custom["DataVis"] as IDataVisualizationSettings).type == 'svg') 
+        svg =  (valueField.config.custom["DataVis"] as IDataVisualizationSettings).svgTxt ?? "";
+      
       let dataLink = undefined;
       let targetBlank = false;
       if (valueField.config.links != undefined && valueField.config.links.length > 0){
         dataLink = valueField.config.links[0]["url"]?.replace(/{Name}/gi, s.name?? "") ?? "";;
         targetBlank = valueField.config.links[0]["targetBlank"] ?? false;
       }
+
 
       return {
         Value: value,
@@ -511,6 +566,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         GeoJSON: geoJson,
         Link: dataLink,
         TargetBlank: targetBlank,
+        SVG: svg,
+        Name: s.name ??''
         } as IDataPoint
     })
     setDataLayer(updatedData);

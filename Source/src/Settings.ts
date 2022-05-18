@@ -43,7 +43,7 @@ export type TileServer = {
 }
 
 export type DataAggregation = ('min'|'max'|'last'|'average'|'count'|'sum')
-export type DataVisualization = ('circle'|'square'|'triangle'|'custom'|'phasorMag'|'phasorAng')
+export type DataVisualization = ('circle'|'square'|'triangle'|'custom'|'phasorMag'|'phasorAng'|'svg')
 export interface IDataVisualizationSettings {
   type: DataVisualization,
   link?: string,
@@ -53,7 +53,8 @@ export interface IDataVisualizationSettings {
   stepMagnitude?: number,
   show?: ('value'|'heatmap'|'both'),
   secondaryColor?: string,
-  phasorIndex?: number
+  phasorIndex?: number,
+  svgTxt?: string,
 }
 
 export type DisplaySettings = {

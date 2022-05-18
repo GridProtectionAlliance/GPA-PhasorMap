@@ -1,6 +1,6 @@
 import React from 'react';
 import { FieldConfigEditorProps } from '@grafana/data';
-import { ColorPicker, Field, Input, Select } from '@grafana/ui';
+import { ColorPicker, Field, Input, Select, TextArea } from '@grafana/ui';
 import { DataVisualization, IDataVisualizationSettings} from '../Settings';
 
 interface Props extends FieldConfigEditorProps<IDataVisualizationSettings,any> {}
@@ -21,7 +21,8 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
             {value: 'square' as DataVisualization, label: 'Square' },
             {value: 'custom' as DataVisualization, label: 'Custom GeoJSON' },
             {value: 'phasorAng' as DataVisualization, label: 'Phasor Clock Angle' },
-            {value: 'phasorMag' as DataVisualization, label: 'Phasor Clock Magnitude' }
+            {value: 'phasorMag' as DataVisualization, label: 'Phasor Clock Magnitude' },
+            {value: 'svg' as DataVisualization, label: 'Custom SVG' }
             ]}
             value={currentSettings.type}
             onChange={(v) => setCurrentSettings((d) => ({...d, type: v.value as DataVisualization }))}
@@ -30,6 +31,13 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
     {currentSettings.type == 'custom'?
       <Field label={'Link'}  description={'The URL for a custom GeoJson Feature. This Fields substitutes {Name} with the Name of the Signal. Color, Stroke width and Opacity are based on the Data.'}>
             <Input value={currentSettings.link} onChange={(v) => { setCurrentSettings((d) => ({...d, link: v.currentTarget?.value as string})) } } css={undefined}/>
+      </Field>
+        
+       : null
+    }
+    {currentSettings.type == 'svg'?
+      <Field label={'SVG'}  description={'The custom SVG element. Base Color and Opacity are based on the Data. {XXX} will be evaluated as JS. value anbd label are available Variables'}>
+            <TextArea value={currentSettings.svgTxt} onChange={(v) => { setCurrentSettings((d) => ({...d, svgTxt: v.currentTarget?.value as string})) } } css={undefined}/>
       </Field>
         
        : null
