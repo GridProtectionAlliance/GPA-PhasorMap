@@ -5,7 +5,7 @@
 	"version": "1.0.0",
 	"description": "PMU map Panel Plugin for Grafana",
 	"scripts": {
-		"build": "grafana-toolkit plugin:build",
+		"build": "set NODE_OPTIONS=--openssl-legacy-provider && grafana-toolkit plugin:build",
 		"test": "grafana-toolkit plugin:test",
 		"dev": "grafana-toolkit plugin:dev",
 		"watch": "grafana-toolkit plugin:dev --watch"
