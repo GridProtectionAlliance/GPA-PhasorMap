@@ -36,7 +36,7 @@ export const DataDisplayUIEditor: React.FC<Props> = ({ item, value, onChange, co
        : null
     }
     {currentSettings.type == 'svg'?
-      <Field label={'SVG'}  description={'The custom SVG element. Base Color and Opacity are based on the Data. {XXX} will be evaluated as JS. value anbd label are available Variables'}>
+      <Field label={'SVG'}  description={'The custom SVG element. Base Color and Opacity are based on the Data. {XXX} will be evaluated as JS. Value, Name, Color and Opacity are available Variables'}>
             <TextArea value={currentSettings.svgTxt} onChange={(v) => { setCurrentSettings((d) => ({...d, svgTxt: v.currentTarget?.value as string})) } } css={undefined}/>
       </Field>
         

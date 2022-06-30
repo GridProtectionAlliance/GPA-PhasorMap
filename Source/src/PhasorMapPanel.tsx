@@ -428,7 +428,7 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
   */
     function parseUserJS(obj: string,p: IDataPoint) {
       try {
-        const preAmble = '"use strict";const Value='+ (p.Value.toString()) +';' + 'const Name=\'' + p.Name + '\';'
+        const preAmble = '"use strict";const Value='+ (p.Value.toString()) +';' + 'const Name=\'' + p.Name + '\';' + 'const Color=\'' + p.Color + '\';' + 'const Opacity=\'' + p.Opacity + '\';'
         return Function(preAmble+'return (' + obj + ')')();
       } catch (error) {
         console.error(error);
