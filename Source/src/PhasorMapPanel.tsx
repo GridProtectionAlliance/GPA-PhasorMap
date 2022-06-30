@@ -19,6 +19,7 @@ interface IDataPoint {
   TargetBlank?: boolean,
   SVG?: string,
   Name?: string,
+  Offset?: OffsetSettings
  }
 
 interface Overlay {Layer: L.TileLayer|L.GeoJSON<any>, Enabled: boolean, Zoom: [number, number]}
@@ -295,17 +296,33 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     Create the correct Data markers on the map.
   */
   function createMarker(p: IDataPoint) {
+    let long = p.Longitude;
+    let lat = p.Latitude;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (p.Offset != null) {
+      if (!p.Offset.isPixel) {
+        long = p.Longitude + p.Offset.x;
+        lat = p.Latitude - p.Offset.y;
+      }
+      else {
+        offsetX = p.Offset.x;
+        offsetY = p.Offset.y;
+      }
+    }
 
     if (p.Visualization == 'circle')
-      return L.circleMarker([p.Latitude, p.Longitude], {
+      return L.circleMarker([lat, long], {
         radius: p.Size,
         color: p.Color,
         fillColor: p.Color,
         fillOpacity: p.Opacity,
+        iconAnchor: [p.Size + offsetX, p.Size + offsetY]
     })
     if (p.Visualization == 'square')
       return  L.marker(
-        [p.Latitude, p.Longitude],
+        [lat, long],
         { 
           icon: L.divIcon({className: cx(styles.wrapper, css`
           width: ${p.Size}px;
@@ -313,15 +330,15 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
           background-color: ${p.Color};
           overflow: hidden;
           opacity: ${p.Opacity}
-          margin-top: -${0.5*p.Size}px;
-          margin-left: -${0.5*p.Size}px;
+          margin-top: -${0.5*p.Size + offsetX}px;
+          margin-left: -${0.5*p.Size + offsetY}px;
         `
-      ), iconSize: undefined})
+      ), iconSize: undefined, })
         }
       );
     if (p.Visualization == 'triangle')
       return L.marker(
-        [p.Latitude, p.Longitude],
+        [p.Latitude, long],
         { 
           icon: L.divIcon({className: cx(styles.wrapper, css`
           width: ${p.Size}px;
@@ -332,15 +349,15 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
           border-right: ${p.Size}px solid transparent;
           border-bottom: ${p.Size}px solid ${p.Color};
           opacity: ${p.Opacity};
-          margin-top: -${0.5*p.Size}px;
-          margin-left: -${p.Size}px;
+          margin-top: -${0.5*p.Size + offsetX}px;
+          margin-left: -${p.Size + offsetY}px;
         `
       ), iconSize: undefined})
         }
       );
     if (p.Visualization == 'svg')
         return L.marker(
-          [p.Latitude, p.Longitude],
+          [p.Latitude, long],
           { 
             icon: L.divIcon({className: cx(styles.wrapper, css`
             width: ${p.Size}px;
@@ -348,8 +365,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
             background: transparent;
             overflow: hidden;
             opacity: ${p.Opacity};
-            margin-top: -${0.5*p.Size}px;
-            margin-left: -${0.5*p.Size}px;
+            margin-top: -${0.5*p.Size + offsetX}px;
+            margin-left: -${0.5*p.Size + offsetY}px;
           `), html: ProcessUserSVG(p.SVG,p), iconSize: undefined
         })
           })
@@ -554,8 +571,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
 
       return {
         Value: value,
-        Longitude: s.meta?.custom?.Longitude ?? options.CenterLong, 
-        Latitude: s.meta?.custom?.Latitude ?? options.CenterLat, 
+        Longitude: (s.meta?.custom?.Longitude ?? options.CenterLong), 
+        Latitude: (s.meta?.custom?.Latitude ?? options.CenterLat), 
         Visualization: (valueField.config.custom["DataVis"] as IDataVisualizationSettings).type,
         Size: calcSize(minValue,maxValue,valueField.config.custom["MinSize"],valueField.config.custom["MaxSize"],value),
         Color: display(calcValue(valueField)).color ?? "#ffffff",
@@ -567,7 +584,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
         Link: dataLink,
         TargetBlank: targetBlank,
         SVG: svg,
-        Name: s.name ??''
+        Name: s.name ??'',
+        Offset: valueField.config.custom["offset"],
         } as IDataPoint
     })
     setDataLayer(updatedData);

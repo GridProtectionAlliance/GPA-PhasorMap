@@ -93,3 +93,9 @@ export interface IWMSLayer extends ILayer {
 }
 
 export type CustomLayer = (ITileLayer | IGeoJson | IWMSLayer)
+
+export type OffsetSettings = {
+  x: number,
+  y: number,
+  isPixel: boolean
+}

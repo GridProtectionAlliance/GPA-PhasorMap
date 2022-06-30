@@ -5,6 +5,8 @@ import { BaseLayerSelect } from './EditorUI/BaseLayerSelect'
 import { DisplaySettingsEditor } from 'EditorUI/DisplaySettings';
 import { CustomLayerList } from 'EditorUI/CustomLayerUI';
 import { DataDisplayUIEditor } from 'EditorUI/DataDisplayUI';
+import { OffsetSettings } from './Settings';
+import { OffsetSettingsEditor } from './EditorUI/OffsetSettings';
 
 export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldConfig({
   disableStandardOptions: [],
@@ -77,6 +79,15 @@ export const plugin = new PanelPlugin<IPanelOptions>(PhasorMapPanel).useFieldCon
       override: DisplaySettingsEditor,
       defaultValue: {Show: false, Stick: false, Text: '', TextMode: 'Value'} as DisplaySettings,
       editor: DisplaySettingsEditor,
+    }).addCustomEditor({
+      path: 'offset',
+      name: 'offset',
+      id: 'offset',
+      shouldApply: () => true,
+      process: (v) => v as OffsetSettings, 
+      override: OffsetSettingsEditor,
+      defaultValue: {x: 0, y: 0, isPixel: true} as OffsetSettings,
+      editor: OffsetSettingsEditor,
     });
 
   }
