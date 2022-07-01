@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Field, FieldType, getDisplayProcessor, PanelProps, Vector } from '@grafana/data';
-import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer, IWMSLayer } from './Settings';
+import { CustomLayer, DataAggregation, DataVisualization, DisplaySettings, IDataVisualizationSettings, IGeoJson, IPanelOptions, ITileLayer, IWMSLayer, OffsetSettings } from './Settings';
 import * as L from 'leaflet';
 import { css, cx } from 'emotion';
 import { stylesFactory } from '@grafana/ui';
@@ -303,8 +303,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
 
     if (p.Offset != null) {
       if (!p.Offset.isPixel) {
-        long = p.Longitude + p.Offset.x;
-        lat = p.Latitude - p.Offset.y;
+        long = p.Longitude - p.Offset.x;
+        lat = p.Latitude + p.Offset.y;
       }
       else {
         offsetX = p.Offset.x;
@@ -313,13 +313,21 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
     }
 
     if (p.Visualization == 'circle')
-      return L.circleMarker([lat, long], {
-        radius: p.Size,
-        color: p.Color,
-        fillColor: p.Color,
-        fillOpacity: p.Opacity,
-        iconAnchor: [p.Size + offsetX, p.Size + offsetY]
+    return L.marker(
+      [lat, long],
+      { 
+        icon: L.divIcon({className: cx(styles.wrapper, css`
+        width: ${2*p.Size}px;
+        height: ${2*p.Size}px;
+        background: transparent;
+        overflow: hidden;
+        opacity: ${p.Opacity};
+        margin-top: -${p.Size + offsetY}px;
+        margin-left: -${p.Size + offsetX}px;
+      `), html: `<svg style="width: 100%;height: 100%;"> <circle cx="${p.Size}" cy="${p.Size}" r="${p.Size}" fill="${p.Color}" /> </svg>`, iconSize: undefined
     })
+      })
+
     if (p.Visualization == 'square')
       return  L.marker(
         [lat, long],
@@ -329,16 +337,16 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
           height: ${p.Size}px;
           background-color: ${p.Color};
           overflow: hidden;
-          opacity: ${p.Opacity}
-          margin-top: -${0.5*p.Size + offsetX}px;
-          margin-left: -${0.5*p.Size + offsetY}px;
+          opacity: ${p.Opacity};
+          margin-top: -${0.5*p.Size + offsetY}px;
+          margin-left: -${0.5*p.Size + offsetX}px;
         `
       ), iconSize: undefined, })
         }
       );
     if (p.Visualization == 'triangle')
       return L.marker(
-        [p.Latitude, long],
+        [lat, long],
         { 
           icon: L.divIcon({className: cx(styles.wrapper, css`
           width: ${p.Size}px;
@@ -349,15 +357,15 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
           border-right: ${p.Size}px solid transparent;
           border-bottom: ${p.Size}px solid ${p.Color};
           opacity: ${p.Opacity};
-          margin-top: -${0.5*p.Size + offsetX}px;
-          margin-left: -${p.Size + offsetY}px;
+          margin-top: -${0.5*p.Size + offsetY}px;
+          margin-left: -${p.Size + offsetX}px;
         `
       ), iconSize: undefined})
         }
       );
     if (p.Visualization == 'svg')
         return L.marker(
-          [p.Latitude, long],
+          [lat, long],
           { 
             icon: L.divIcon({className: cx(styles.wrapper, css`
             width: ${p.Size}px;
@@ -365,8 +373,8 @@ export const PhasorMapPanel: React.FC<Props> = ({ options, data, width, height, 
             background: transparent;
             overflow: hidden;
             opacity: ${p.Opacity};
-            margin-top: -${0.5*p.Size + offsetX}px;
-            margin-left: -${0.5*p.Size + offsetY}px;
+            margin-top: -${0.5*p.Size + offsetY}px;
+            margin-left: -${0.5*p.Size + offsetX}px;
           `), html: ProcessUserSVG(p.SVG,p), iconSize: undefined
         })
           })
