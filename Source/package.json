@@ -27,7 +27,7 @@
 		"file-loader": "^3.0.1",
 		"grafana-sdk-mocks": "github:grafana/grafana-sdk-mocks",
 		"jquery": "^3.3.1",
-		"loader-utils": "^1.1.0",
+		"loader-utils": "^1.4.2",
 		"ng-annotate-webpack-plugin": "^0.3.0",
 		"style-loader": "^0.23.1",
 		"ts-loader": "^5.3.0",
